@@ -2,6 +2,7 @@ import mariadb
 import sys
 from tabulate import tabulate
 
+
 def print_menu():
     print("#-------------------------------------------------------------#")
     print("Main Menu")
@@ -47,18 +48,6 @@ def get_int_input(prompt):
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
-# Adds single food establishment
-def add_food_establishment(cur,estabid, estabname, branch_address, rating):
-    #adds the given details about food establishment to the food establishment table
-    cur.execute("INSERT INTO food_estab(estabname, branch_address, rating) VALUES (?, ?, ?)",(estabname, branch_address, rating))
-    return
-
-# Adds single contact
-def add_food_establishment_contact(cur, estabid, contactnum):
-    #adds the given details about food establishment contact number to the food establishment contact number table
-    cur.execute("INSERT INTO estab_contact(estabid, contactnum) VALUES (?, ?)",(estabid, contactnum))
-    return
-
 # Checks if estabid is existing in food establishment table
 def check_estabid_exists(cur, estabid):
     #checks if the given estabid exists in the contacts table
@@ -73,36 +62,73 @@ def check_estabid_in_contact_exists(cur, estabid):
     count = cur.fetchone()[0]
     return count > 0 # 0 if not existing & 1 if it exists
 
-#delete instance of food establishment
-def delete_food_establishment(cur, estabid, productid):
-   """Deletes detail in the table"""
-   print("removing all food products and its food type related to this fodd establishment")  #pagnapagsama sama na pakibura na lang nung product id 
-   # rules to delete a food establishment
-   # remove food_type because it uses product id as a fk
-   # remove food_item because it uses establishment id as a fk
-   # remove estab_contact because it uses establishment id as a fk it is in a different function dont worry 
-   # after all that you can now remove the establishment
-   cur.execute("DELETE FROM food_type WHERE productid=?", (productid,)) #needs to be deleted since it is estabid is a fk in this table
-   cur.execute("DELETE FROM food_item WHERE estabid=?", (estabid,)) #needs to be deleted since it is estabid is a fk in this table
-   cur.execute("DELETE FROM food_estab WHERE estabid=?",(estabid,))
-   return
-
-#delete all instance of food establishment contact number
-def delete_food_establishment_contact(cur, estabid):
-   """Deletes detail in the table"""
-   cur.execute("DELETE FROM estab_contact WHERE estabid=?",(estabid,))
-   return
-
-#delete a single instance of food establishment contact number
-def delete_food_establishment_contact_single(cur, estabid, contactnum):
-   """Deletes detail in the table"""
-   cur.execute("DELETE FROM estab_contact WHERE estabid=? and contactnum=?",(estabid, contactnum))
-   return
+#function that gets establishment_id
+def search_food_establishment_id(cur, estabname):
+    cur.execute("SELECT estabid FROM food_estab WHERE estabname=?", (estabname,))
+    result = cur.fetchone()
+    
+    if result is None:
+        print("Establishment not found.")
+        return
+    
+    return result[0]
 
 
-def update_food_establishment(cur, estabid, estabname=None, branch_address=None, rating=None):
+# Adds single food establishment
+def add_food_establishment(cur,conn):
+    estabname = (input("Enter Establishment Name <Establishment Name> - <General Location>: "))
+    branch_address = (input("Enter Branch Address: "))
+    rating = int(input("Enter Rating: "))
+    rating_array = [1,2,3,4,5]
+    if(len(estabname) > 50 or len(branch_address) > 50 or rating not in rating_array):
+        print("There has been a problem on one of the attribute inputted")
+        return
+    else:
+        print("Food Establishment Details Added To The Food Establishment Table\n")
+        #adds the given details about food establishment to the food establishment table
+        cur.execute("INSERT INTO food_estab(estabname, branch_address, rating) VALUES (?, ?, ?)",(estabname, branch_address, rating))
+        conn.commit()
+        return
+
+# Adds single contact
+def add_food_establishment_contact(cur,conn):
+    estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+    estabid = search_food_establishment_id(cur, estabname_input)
+    if(check_estabid_exists(cur, estabid) == 0):
+        return
+    contactnumIntForm = str(int(input("Enter Contact Number: ")))
+    if(len(contactnumIntForm) == 11):
+        #adds the given details about food establishment contact number to the food establishment contact number table
+        cur.execute("INSERT INTO estab_contact(estabid, contactnum) VALUES (?, ?)",(estabid, contactnumIntForm))
+        print("A New Number For Establishment " + estabname_input +" Is Added\n")
+        conn.commit()
+    else:
+        print("There has been a problem on one of the attribute inputted\n")
+    return
+
+def update_food_establishment(cur,conn):
     #updates specific attributes of an establishment in the table
+    estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+    estabid = search_food_establishment_id(cur, estabname_input)
+    if(check_estabid_exists(cur, estabid) == 0):
+        return
+    else:
+        estabname_input = input("Enter Establishment Name to update for (Leave empty if do not want to update): ")
+        branch_address_input = input("Enter Branch Address to update for (Leave empty if do not want to update): ")
+        rating_input = input("Enter Rating to search for (Leave empty if do not want to update): ")
+        rating = int(rating_input) if rating_input else None
 
+        if(len(estabname_input) <= 50):
+            estabname = estabname_input if estabname_input else None
+        else:
+            print("Invalid input for Establishment Name.")
+            return
+        if(len(branch_address_input) <= 50):
+            branch_address = branch_address_input if branch_address_input else None
+        else:
+            print("Invalid input for Branch Address.")
+            return
+        
     update_query = "UPDATE food_estab SET "
     update_values = []
 
@@ -137,13 +163,92 @@ def update_food_establishment(cur, estabid, estabname=None, branch_address=None,
 
     # Execute the update query
     cur.execute(update_query, update_values)
-    print("Successfully Updated Details")
-
+    conn.commit()
+    print("Successfully Updated Details\n")
     return
 
-def search_food_establishment(cur, estabid=None, estabname=None, branch_address=None, rating=None):
+
+#delete instance of food establishment
+def delete_food_establishment(cur, conn):
+    # Deletes a detail in the table
+    estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+    estabid = search_food_establishment_id(cur, estabname_input)
+    productid = int(input("Enter Product ID: ")) # remove later on when combined with all
+    if(check_estabid_exists(cur, estabid)== 0):
+        return
+    print("Removing all food products and its food type related to this food establishment")  # remove product id prompt when combined
+
+    if(check_estabid_in_contact_exists(cur, estabid) == 0):  # contact number does not exist
+        # Rules to delete a food establishment
+        # Remove food_type because it uses productid as a FK
+        # Remove food_item because it uses estabid as a FK
+        # Remove estab_contact because it uses estabid as a FK, which is in a different function
+        # After all that, you can now remove the establishment
+        cur.execute("DELETE FROM food_type WHERE productid=?", (productid,))  # needs to be deleted since estabid is a FK in this table
+        cur.execute("DELETE FROM food_item WHERE estabid=?", (estabid,))  # needs to be deleted since estabid is a FK in this table
+        cur.execute("DELETE FROM food_estab WHERE estabid=?", (estabid,))
+        conn.commit()
+        print("Successfully Deleted\n")
+    else:
+        print("Delete first the contact number that has the same establishment id\n")
+    return
+
+
+#delete all instance of food establishment contact number
+def delete_food_establishment_contact(cur, conn):
+   #deletes detail in the table
+   estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+   estabid = search_food_establishment_id(cur, estabname_input)
+   if(check_estabid_exists(cur, estabid) == 0):
+    return
+   if(check_estabid_exists(cur,estabid) == 1 and check_estabid_in_contact_exists(cur,estabid) == 1):
+    cur.execute("DELETE FROM estab_contact WHERE estabid=?",(estabid,))
+    conn.commit()
+    print("Successfully Deleted\n")
+   else:
+    print("There is no existing food establishment id with the same establishment id in contacts\n")
+   return
+
+#delete a single instance of food establishment contact number
+def delete_food_establishment_contact_single(cur, conn):
+   #deletes detail in the table
+   estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+   estabid = search_food_establishment_id(cur, estabname_input)
+   if(check_estabid_exists(cur, estabid) == 0):
+    return
+   contactnumIntForm = str(int(input("Enter Contact Number: ")))
+   if(check_estabid_exists(cur,estabid) == 1 and check_estabid_in_contact_exists(cur,estabid) == 1 and len(contactnumIntForm) == 11):
+    cur.execute("DELETE FROM estab_contact WHERE estabid=? and contactnum=?",(estabid, contactnumIntForm))
+    conn.commit()
+    print("Successfully Deleted\n")
+   else:
+    print("There is no existing food establishment id with the same establishment id in contacts\n")
+   return
+
+
+def search_food_establishment(cur, conn):
     #search specific attributes of an establishment in the table
-    
+    estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+    estabid = search_food_establishment_id(cur, estabname_input)
+    if(check_estabid_exists(cur, estabid) == 0):
+        return
+
+    estabname_input = input("Enter Establishment Name to search for (Leave empty if not specified): ")
+    branch_address_input = input("Enter Branch Address to search for (Leave empty if not specified): ")
+    rating_input = input("Enter Rating to search for (Leave empty if not specified): ")
+    rating = int(rating_input) if rating_input else None
+
+    if(len(estabname_input) <= 50):
+        estabname = estabname_input if estabname_input else None
+    else:
+        print("Invalid input for Establishment Name.")
+        return
+    if(len(branch_address_input) <= 50):
+        branch_address = branch_address_input if branch_address_input else None
+    else:
+        print("Invalid input for Branch Address.")
+        return
+
     search_query = "SELECT * FROM food_estab WHERE "
     search_values = []
     conditions = []
@@ -187,9 +292,17 @@ def search_food_establishment(cur, estabid=None, estabname=None, branch_address=
 
     return
 
-def search_food_establishment_contact(cur, estabid=None, contactnum=None):
+def search_food_establishment_contact(cur, conn):
     #search specific attributes of an establishment contact in the table
-    
+    estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
+    estabid = search_food_establishment_id(cur, estabname_input)
+    if(check_estabid_exists(cur, estabid) == 0):
+        return
+    contactnumIntForm = (input("Enter Contact Number to search for (Leave empty if not specified): "))
+    if(len(contactnumIntForm) <= 11):
+        contactnumIntForm = contactnumIntForm if contactnumIntForm else None
+    else:
+        print("Invalid input for Contact Number.")
     search_query = "SELECT * FROM estab_contact WHERE "
     search_values = []
     conditions = []
@@ -198,9 +311,9 @@ def search_food_establishment_contact(cur, estabid=None, contactnum=None):
         conditions.append("estabid=?")
         search_values.append(estabid)
 
-    if(contactnum is not None):
+    if(contactnumIntForm is not None):
         conditions.append("contactnum=?")
-        search_values.append(contactnum)
+        search_values.append(contactnumIntForm)
 
     search_query += " AND ".join(conditions)
     
@@ -265,121 +378,35 @@ while True:
             ChoiceForTransaction = NewTransaction()
 
             if ChoiceForTransaction == "1":
-                estabname = (input("Enter Establishment Name: "))
-                branch_address = (input("Enter Branch Address: "))
-                rating = int(input("Enter Rating: "))
-                rating_array = [1,2,3,4,5]
-                if(len(estabname) > 50 or len(branch_address) > 50 or rating not in rating_array or len(estabid_input) > 5):
-                    print("There has been a problem on one of the attribute inputted")
-                else:
-                    add_food_establishment(cur,estabid, estabname, branch_address, rating)
-                    conn.commit()
-                    print("Food Establishment Details Added To The Food Establishment Table\n")
+                add_food_establishment(cur, conn)
+                
             
             elif ChoiceForTransaction == "2":
-                estabid = get_int_input("Enter Establishment ID: ")
-                contactnumIntForm = str(int(input("Enter Contact Number: ")))
-                if(len(contactnumIntForm) == 11 and check_estabid_exists(cur,estabid) == 1):
-                    add_food_establishment_contact(cur, estabid, contactnumIntForm)
-                    conn.commit()
-                    print("A New Number For Establishment " + str(estabid) +" Is Added\n")
-                else:
-                    print("There has been a problem on one of the attribute inputted\n")
+                add_food_establishment_contact(cur, conn)
     
             elif ChoiceForTransaction == "3":
-                estabid = get_int_input("Enter Establishment ID: ")
-                if check_estabid_exists(cur, estabid) == 0:
-                    print("Invalid Establishment ID.")
-                else:
-                    estabname_input = input("Enter Establishment Name to update for (Leave empty if do not want to update): ")
-                    branch_address_input = input("Enter Branch Address to update for (Leave empty if do not want to update): ")
-                    rating_input = input("Enter Rating to search for (Leave empty if do not want to update): ")
-                    rating = int(rating_input) if rating_input else None
-
-                    if(len(estabname_input) <= 50):
-                        estabname = estabname_input if estabname_input else None
-                    else:
-                        print("Invalid input for Establishment Name.")
-                    if(len(branch_address_input) <= 50):
-                        branch_address = branch_address_input if branch_address_input else None
-                    else:
-                        print("Invalid input for Branch Address.")
-                    update_food_establishment(cur, estabid, estabname, branch_address, rating)
-                    conn.commit()
-                    print("\n")
+                update_food_establishment(cur, conn)
 
             elif ChoiceForTransaction == "4":
-                estabid = get_int_input("Enter Establishment ID: ")
-                productid = int(input("Enter Product ID: "))#remove later on when combined with all
-                if(check_estabid_in_contact_exists(cur,estabid) == 0):
-                    delete_food_establishment(cur,estabid, productid)
-                    conn.commit()
-                    print("Successfully Deleted\n")
-                else:
-                    print("Delete first the contact number that has the same establishment id\n")
+                delete_food_establishment(cur, conn)
             
             elif ChoiceForTransaction == "5":
                 while True:
                     ChoiceForOptionDelete = print_option_delete()
-
                     if ChoiceForOptionDelete == "1":
-                        estabid = get_int_input("Enter Establishment ID: ")
-                        if(check_estabid_exists(cur,estabid) == 1 and check_estabid_in_contact_exists(cur,estabid) == 1):
-                            delete_food_establishment_contact(cur,estabid)
-                            conn.commit()
-                            print("Successfully Deleted\n")
-                        else:
-                            print("There is no existing food establishment id with the same establishment id in contacts\n")
-                    
+                        delete_food_establishment_contact(cur, conn)
                     elif ChoiceForOptionDelete == "2":
-                        estabid = get_int_input("Enter Establishment ID: ")
-                        contactnumIntForm = str(int(input("Enter Contact Number: ")))
-                        if(check_estabid_exists(cur,estabid) == 1 and check_estabid_in_contact_exists(cur,estabid) == 1 and len(contactnumIntForm) == 11):
-                            delete_food_establishment_contact_single(cur,estabid,contactnumIntForm)
-                            conn.commit()
-                            print("Successfully Deleted\n")
-                        else:
-                            print("There is no existing food establishment id with the same establishment id in contacts\n")
-                    
+                        delete_food_establishment_contact_single(cur, conn)
                     elif ChoiceForOptionDelete == "0":
                         break
-
                     else:
                         print("Invalid Input")
 
             elif ChoiceForTransaction == "6":
-                estabid = get_int_input("Enter Establishment ID: ")
-                if check_estabid_exists(cur, estabid) == 0:
-                    print("Invalid Establishment ID.")
-                else:
-                    estabname_input = input("Enter Establishment Name to search for (Leave empty if not specified): ")
-                    branch_address_input = input("Enter Branch Address to search for (Leave empty if not specified): ")
-                    rating_input = input("Enter Rating to search for (Leave empty if not specified): ")
-                    rating = int(rating_input) if rating_input else None
-
-                    if(len(estabname_input) <= 50):
-                        estabname = estabname_input if estabname_input else None
-                    else:
-                        print("Invalid input for Establishment Name.")
-                    if(len(branch_address_input) <= 50):
-                        branch_address = branch_address_input if branch_address_input else None
-                    else:
-                        print("Invalid input for Branch Address.")
-                    search_food_establishment(cur, estabid, estabname, branch_address, rating)
-                    print("\n")
+                search_food_establishment(cur, conn)
                     
             elif ChoiceForTransaction == "7":
-                estabid = get_int_input("Enter Establishment ID: ")
-                if check_estabid_exists(cur, estabid) == 0:
-                    print("Invalid Establishment ID.")
-                else:
-                    contactnumIntForm = (input("Enter Contact Number to search for (Leave empty if not specified): "))
-                    if(len(contactnumIntForm) <= 11):
-                        contactnumIntForm = contactnumIntForm if contactnumIntForm else None
-                    else:
-                        print("Invalid input for Contact Number.")
-                    search_food_establishment_contact(cur, estabid, contactnumIntForm)
-                    print("\n")
+                search_food_establishment_contact(cur, conn)
 
             elif ChoiceForTransaction == "8":
                 print_details(cur, "food_estab")
