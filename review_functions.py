@@ -403,11 +403,3 @@ def fetchall(query, params):
     finally:
         cursor.close()
         conn.close()
-
-# if __name__ == "__main__":
-#     #Call the function to display all users
-#     username = "AkosiRoche123"
-#     password = "AkosiRoche"
-#
-#     addFoodEstabReview()
-
