@@ -4,6 +4,7 @@ import datetime
 from tabulate import tabulate
 
 from review_functions import *
+from establishment_functions import *
 from fooditems import *
 
 # comment
@@ -53,14 +54,54 @@ def modifyfood():
 def modifyestab():
     while True:
         print("\nMODIFY ESTABLISHMENT")
-        print("\n[1] Update an Establishment")
-        print("[2] Delete an Establishment")
+        print("\n[1] Insert an Establishment") #added
+        print("\n[2] Update an Establishment")
+        print("\n[3] Delete an Establishment")
+        print("[4] Search an Establishment")
         print("[0] Back")
         estabchoice = int(input("\nEnter choice: "))
         if estabchoice == 1:
-            print("fxn here")
+            #print("fxn here") to require at least one contact on the establishment
+            add_food_establishment(cur,mydb)
+            add_food_establishment_contact(cur,mydb)
         elif estabchoice == 2:
-            print("fxn here")
+            while True:
+                print("\n[1] Update information of an Establishment")
+                print("\n[2] (Optional) Add an additional contact number for an Establishment")
+                print("[0] Back")
+                echoice = int(input("\nEnter choice: "))
+                if echoice == 1:
+                    update_food_establishment(cur,mydb)
+                elif echoice == 2:
+                    add_food_establishment_contact(cur,mydb)
+                elif echoice == 0:
+                    break
+                else:
+                    print("\nInvalid input.")
+        elif estabchoice == 3:
+            while True:
+                    ChoiceForOptionDelete = print_option_delete()
+                    if ChoiceForOptionDelete == "1":
+                        delete_food_establishment(cur, mydb)
+                    elif ChoiceForOptionDelete == "2":
+                        delete_food_establishment_contact(cur, mydb)
+                    elif ChoiceForOptionDelete == "3":
+                        delete_food_establishment_contact_single(cur, mydb)
+                    elif ChoiceForOptionDelete == "0":
+                        break
+                    else:
+                        print("Invalid Input")
+        elif estabchoice == 4:
+            while True:
+                SearchChoice = print_menu_search()
+                if SearchChoice == 1:
+                    search_food_establishment(cur, conn)
+                elif SearchChoice == 2:
+                    search_food_establishment_contact(cur, conn)
+                elif SearchChoice == 0:
+                    break
+                else:
+                    print("Invalid input.\n")
         elif estabchoice == 0:
             break
         else:
@@ -328,9 +369,8 @@ def viewFoodReviews():
 def adminmenu():
     while True:
         print("\nMAIN MENU")
-
-        print("\n[1] Manage Food Item")  # modify=update and delete
-        print("[2] Modify Establishment")
+        print("\n[1] Modify Food Item")  # modify=update and delete
+        print("[2] Manage Establishment")
         print("[3] Modify Review")
         print("[4] Search Food Item")
         print("[5] View")
