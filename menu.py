@@ -95,9 +95,9 @@ def modifyestab():
             while True:
                 SearchChoice = print_menu_search()
                 if SearchChoice == 1:
-                    search_food_establishment(cur, conn)
+                    search_food_establishment(cur, mydb)
                 elif SearchChoice == 2:
-                    search_food_establishment_contact(cur, conn)
+                    search_food_establishment_contact(cur, mydb)
                 elif SearchChoice == 0:
                     break
                 else:
