@@ -157,7 +157,7 @@ def searchFoodItem(cur, flag): #flag is for reusability of search: 1 is for id s
             return None
         return itemid #returns the id
 
-def NewFoodItemTransaction(cur):
+def newFoodItemTransaction(cur):
     while True:
         print("#-------------------------------------------------------------#")
         print("[1] Add Food Item")

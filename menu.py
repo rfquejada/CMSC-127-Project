@@ -338,7 +338,7 @@ def adminmenu():
         choice = int(input("\n""Enter choice: "))
 
         if choice == 1:
-            NewFoodItemTransaction(cur)
+            newFoodItemTransaction(cur)
 
         elif choice == 2:
             modifyestab()
