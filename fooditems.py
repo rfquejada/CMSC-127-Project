@@ -156,28 +156,31 @@ def searchFoodItem(cur, flag): #flag is for reusability of search: 1 is for id s
             print("Product not found!")
             return None
         return itemid #returns the id
-        
-def print_menu():
-    print("#-------------------------------------------------------------#")
-    print("Main Menu")
-    print("[1] Food Item")
-    print("[0] Exit")
-    print("#-------------------------------------------------------------#")
 
-    ChoiceForMenu = input("\nEnter choice: ")
-    return ChoiceForMenu
+def NewFoodItemTransaction(cur):
+    while True:
+        print("#-------------------------------------------------------------#")
+        print("[1] Add Food Item")
+        print("[2] Edit Food Item")
+        print("[3] Delete Food Item")
+        print("[4] Search Food Item (Singular)")
+        print("[0] Back to Main Menu")
+        print("#-------------------------------------------------------------#")
 
-def NewTransaction():
-    print("#-------------------------------------------------------------#")
-    print("[1] Add Food Item")
-    print("[2] Edit Food Item")
-    print("[3] Delete Food Item")
-    print("[4] Search Food Item")
-    print("[0] Back to Main Menu")
-    print("#-------------------------------------------------------------#")
+        ChoiceForTransaction = input("\nWhat you want to do?\nEnter choice: ")
 
-    ChoiceForTransaction = input("\nWhat you want to do?\nEnter choice: ")
-    return ChoiceForTransaction
+        if ChoiceForTransaction == "1":
+            addFoodItem(cur)
+        elif ChoiceForTransaction == "2":
+            updateFoodItem(cur)
+        elif ChoiceForTransaction == "3":
+            deleteFoodItem(cur)
+        elif ChoiceForTransaction == "4":
+            searchFoodItem(cur, 0)
+        elif ChoiceForTransaction == "0":
+            return
+        else:
+            print("Invalid Choice")
     
 # Connect to MariaDB Platform
 try:
@@ -194,35 +197,6 @@ except mariadb.Error as e:
 
 # Get Cursor
 cur = conn.cursor()
-
-# Call function to print contacts in table format
-while True:
-    ChoiceForMenu = print_menu()
-
-    #Options
-    if ChoiceForMenu == "1":#Go for a transaction in food establishment
-        while True:
-            ChoiceForTransaction = NewTransaction()
-
-            if ChoiceForTransaction == "1":
-                addFoodItem(cur)
-            elif ChoiceForTransaction == "2":
-                updateFoodItem(cur)
-            elif ChoiceForTransaction == "3":
-                deleteFoodItem(cur)
-            elif ChoiceForTransaction == "4":
-                searchFoodItem(cur, 0)
-            elif ChoiceForTransaction == "0":
-                break
-            else:
-                print("Invalid Choice")
-
-    # Shows how much discount to get
-    elif ChoiceForMenu == "0":
-        break
-    
-    else:
-        print("Invalid Choice")
 
 # Close Connection
 conn.close()

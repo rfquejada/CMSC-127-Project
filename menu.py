@@ -4,6 +4,7 @@ import datetime
 from tabulate import tabulate
 
 from review_functions import *
+from fooditems import *
 
 # comment
 # Connecting to mariadb
@@ -328,7 +329,7 @@ def adminmenu():
     while True:
         print("\nMAIN MENU")
 
-        print("\n[1] Modify Food Item")  # modify=update and delete
+        print("\n[1] Manage Food Item")  # modify=update and delete
         print("[2] Modify Establishment")
         print("[3] Modify Review")
         print("[4] Search Food Item")
@@ -337,7 +338,7 @@ def adminmenu():
         choice = int(input("\n""Enter choice: "))
 
         if choice == 1:
-            modifyfood()
+            NewFoodItemTransaction(cur)
 
         elif choice == 2:
             modifyestab()
