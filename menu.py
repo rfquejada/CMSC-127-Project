@@ -24,13 +24,13 @@ def sqlprint(rows, cur):
     if not rows:
         print("No results found.")
     else:
-        # Fetch column names from cursor description
+        # fetch column names from cursor description
         column_names = [desc[0] for desc in cur.description]
 
         # to print rows with null
         rows_with_null = [[cell if cell is not None else "NULL" for cell in row] for row in rows]
 
-        # Present data in table format
+        # present data in table format
         print(tabulate(rows_with_null, headers=column_names, tablefmt="coquette"))
 
 
@@ -166,13 +166,13 @@ def search():
         if maxprice.lower() == "n/a":
             while True:
                 foodtype = input("\nFood type: ")
-                if foodtype.strip():
+                if foodtype.strip(): 
                     break
                 else:
                     print("\nInput required.")
-                cur.execute("select * from food_item i natural join food_type t where t.foodtype = ?", (foodtype,))
+                cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE t.foodtype = ?", (foodtype,))
                 rows = cur.fetchall()
-                sqlprint(rows, cur)
+                sqlprint(rows,cur)
         else:
             while True:
                 foodtype = input("\nFood type (N/A if not applicable): ")
@@ -181,11 +181,24 @@ def search():
                 else:
                     print("\nInput required.")
 
-    cur.execute(
-        "select * from food_item i natural join food_type t where ((i.price between ? and ?) and t.foodtype = ?) or t.foodtype = ? or (i.price between ? and ?)",
-        (minprice, maxprice, foodtype, foodtype, minprice, maxprice))
-    rows = cur.fetchall()
+    if minprice.lower() != "n/a" and maxprice.lower() != "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE ((i.price BETWEEN ? AND ?) AND t.foodtype = ?)", (minprice, maxprice, foodtype))
+    elif minprice.lower() != "n/a" and maxprice.lower() != "n/a" and foodtype.lower() == "n/a":
+        cur.execute("SELECT * FROM food_item i WHERE i.price BETWEEN ? AND ?", (minprice, maxprice))
+    elif minprice.lower() == "n/a" and maxprice.lower() != "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE (t.foodtype = ?)", (foodtype,))
+    elif minprice.lower() != "n/a" and maxprice.lower() == "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE (t.foodtype = ?)", (foodtype,))
+    elif minprice.lower() != "n/a" and maxprice.lower() == "n/a" and foodtype.lower() == "n/a":
+        cur.execute("SELECT * FROM food_item i WHERE i.price >= ?", (minprice,))
+    elif minprice.lower() == "n/a" and maxprice.lower() != "n/a" and foodtype.lower() == "n/a":
+        cur.execute("SELECT * FROM food_item i WHERE i.price <= ?", (maxprice,))
+    elif minprice.lower() == "n/a" and maxprice.lower() == "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE (t.foodtype = ?)", (foodtype,))
+    else:
+        cur.execute("SELECT * FROM food_item")
 
+    rows = cur.fetchall()
     sqlprint(rows, cur)
 
 
@@ -219,13 +232,13 @@ def viewEstabs():
         choice = int(input("\nEnter choice: "))
 
         if choice == 1:
-            cur.execute("select * from food_estab")
+            cur.execute("select * from user_reviews_foodestab") #updated source table
             rows = cur.fetchall()
 
             sqlprint(rows, cur)
 
         elif choice == 2:
-            cur.execute("select * from food_estab where rating>=4")
+            cur.execute("select * from user_reviews_foodestab where rating>=4") #updated source table
             rows = cur.fetchall()
 
             sqlprint(rows, cur)
