@@ -380,10 +380,8 @@ def adminmenu():
 
         if choice == 1:
             newFoodItemTransaction(cur)
-
         elif choice == 2:
             modifyestab()
-
         elif choice == 3:
             modifyreview()
         elif choice == 4:
@@ -485,14 +483,22 @@ def main():
             else:
                 print("\nUser does not exist. Sign up instead.")
         elif login == 2:
+            name = input("Name: ")
             username = input("Username: ")
+            contact_number = input("Contact number: ")
             password = input("Password: ")
             confirmpw = input("Confirm Password: ")
 
             if confirmpw == password:
-                print("add_user(username, password)")  # Add the new user to the database
+                cur.execute("insert into user (name, username, password) values (?, ?, ?)", (name, username, password))
+                mydb.commit()
+                cur.execute("select userid from user where username = ? and password = ?", (username, password))
+                row = cur.fetchone()
+                userid = row[0]
+                cur.execute("insert into user_contact (userid, contactnum) values (?, ?)", (userid, contact_number))
+                mydb.commit()
                 print("\nUser " + username + " has been signed up.")
-                customermenu()
+                customermenu(username, password)
             else:
                 print("\nPasswords do not match. Try again.")
         elif login == 0:

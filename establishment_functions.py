@@ -382,10 +382,10 @@ def print_details(cur, table_name):
 # Instantiate Connection
 try:
     conn = mariadb.connect(
-        host="localhost",
+        user="root",
+        password="123123",
+        host="127.0.0.1",
         port=3306,
-        user="127projdb",
-        password="group5",
         database="127projdb"
     )
 except mariadb.Error as e:

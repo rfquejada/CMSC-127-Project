@@ -185,8 +185,9 @@ def newFoodItemTransaction(cur):
 # Connect to MariaDB Platform
 try:
     conn = mariadb.connect(
-        password="04302004",
-        host="localhost",
+        user="root",
+        password="123123",
+        host="127.0.0.1",
         port=3306,
         database="127projdb",
         autocommit=True
