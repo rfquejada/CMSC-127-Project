@@ -54,20 +54,21 @@ def modifyfood():
 def modifyestab():
     while True:
         print("\nMODIFY ESTABLISHMENT")
-        print("\n[1] Insert an Establishment") #added
-        print("\n[2] Update an Establishment")
-        print("\n[3] Delete an Establishment")
+        print("[1] Insert an Establishment") #added
+        print("[2] Update an Establishment")
+        print("[3] Delete an Establishment")
         print("[4] Search an Establishment")
         print("[0] Back")
         estabchoice = int(input("\nEnter choice: "))
         if estabchoice == 1:
             #print("fxn here") to require at least one contact on the establishment
             add_food_establishment(cur,mydb)
+            print("Add Information for contact number")
             add_food_establishment_contact(cur,mydb)
         elif estabchoice == 2:
             while True:
-                print("\n[1] Update information of an Establishment")
-                print("\n[2] (Optional) Add an additional contact number for an Establishment")
+                print("[1] Update information of an Establishment")
+                print("[2] (Optional) Add an additional contact number for an Establishment")
                 print("[0] Back")
                 echoice = int(input("\nEnter choice: "))
                 if echoice == 1:
@@ -94,11 +95,11 @@ def modifyestab():
         elif estabchoice == 4:
             while True:
                 SearchChoice = print_menu_search()
-                if SearchChoice == 1:
+                if SearchChoice == "1":
                     search_food_establishment(cur, mydb)
-                elif SearchChoice == 2:
+                elif SearchChoice == "2":
                     search_food_establishment_contact(cur, mydb)
-                elif SearchChoice == 0:
+                elif SearchChoice == "0":
                     break
                 else:
                     print("Invalid input.\n")
