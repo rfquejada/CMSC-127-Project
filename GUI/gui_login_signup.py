@@ -202,6 +202,88 @@ def show_signup_screen():
                                fg_color="#FFFFFF", text_color="#1E90FF", hover_color="#FFFFFF", command=show_login_screen)
     login_link.pack(side="left")
 
+def customermenu(username, password):
+    clear_window()
+
+    app.configure(bg="#F0F0F0")
+
+    # Configure grid layout of app window
+    app.grid_rowconfigure(0, weight=1)
+    app.grid_columnconfigure(0, weight=1)
+    app.grid_columnconfigure(1, weight=1)
+    app.grid_columnconfigure(2, weight=1)
+    app.grid_columnconfigure(3, weight=1)
+    app.grid_columnconfigure(4, weight=50)
+
+    # Left panel
+    left_panel1 = ctk.CTkFrame(app, fg_color="#9ED1F4", width=100)
+    left_panel1.grid(row=0, column=0, sticky="nsew")
+
+    left_panel2 = ctk.CTkFrame(app, fg_color="#1098F7", width=75)
+    left_panel2.grid(row=0, column=1, sticky="nsew")
+
+    left_panel3 = ctk.CTkFrame(app, fg_color="#B89E97", width=75)
+    left_panel3.grid(row=0, column=2, sticky="nsew")
+
+    left_panel4 = ctk.CTkFrame(app, fg_color="#DECCCC", width=100)
+    left_panel4.grid(row=0, column=3, sticky="nsew")
+
+    # Main customer menu frame
+    customer_menu_frame = ctk.CTkFrame(app, fg_color="#FFFFFF")
+    customer_menu_frame.grid(row=0, column=4, sticky="nsew")
+
+    # Configure grid layout of customer_menu_frame
+    customer_menu_frame.grid_columnconfigure(0, weight=1)
+    customer_menu_frame.grid_columnconfigure(1, weight=1)
+    customer_menu_frame.grid_columnconfigure(2, weight=1)
+
+
+    # Welcome message
+    welcome_label = ctk.CTkLabel(customer_menu_frame, text=f"Welcome!", font=("Helvetica", 45))
+    welcome_label.grid(row=0, column=2, pady=(40, 20), padx=(0, 0))
+
+    # Button options grid
+    button_options = [
+        "Review a \nFood Item",
+        "Review an \nEstablishment",
+        "Update a \nReview",
+        "Delete a \nReview",
+        "Search \nFood Item",
+        "View"
+    ]
+
+    # Define colors for buttons
+    button_colors = [
+        "#1098F7",
+        "#DECCCC",
+        "#1098F7",
+        "#B89E97",
+        "#9ED1F4",
+        "#B89E97"
+    ]
+
+    # button_commands = [
+    #     review_food_item,
+    #     review_establishment,
+    #     update_review,
+    #     delete_review,
+    #     search_food_item,
+    #     view
+    # ]
+
+    
+    for i, (option, color) in enumerate(zip(button_options, button_colors)): #missing button commands
+        row = i // 3 + 1
+        col = i % 3
+        button = ctk.CTkButton(customer_menu_frame, text=option, width=250, height=250, fg_color=color,
+                               font=("Helvetica", 30), text_color="#000000")
+        button.grid(row=row, column=col, padx=10, pady=50)
+
+    # Logout button
+    logout_button = ctk.CTkButton(customer_menu_frame, text="Logout", font=("Helvetica", 28), fg_color="#FF3E3E",
+                                  command=show_login_screen)
+    logout_button.grid(row=0, column=0, padx=0, pady=(50, 10))
+
 def clear_window():
     for widget in app.winfo_children():
         widget.destroy()
