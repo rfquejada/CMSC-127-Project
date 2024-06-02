@@ -154,10 +154,10 @@ def updateFoodItemReview(username, password):
             execute_query(query, params)
 
             # Updates the average rating of the establishment
-            getRatingQuery = "select avg(rating) from user_reviews_foodestab_item where estabid = ?"
-            getRatingParam = (estabid,)
+            getRatingQuery = "select avg(rating) from user_reviews_foodestab_item where estabid = ? and productid = ?"
+            getRatingParam = (estabid, productid)
             avg_rating = fetch(getRatingQuery, getRatingParam)[0]
-            updateEstabRating(avg_rating, estabid)
+            updateFoodItemRating(avg_rating, estabid, productid)
 
         else:
             print("Please enter a valid review number.")
@@ -265,10 +265,10 @@ def deleteFoodReview(username, password):
                 execute_query(query, params)
 
                 # Updates the average rating of the establishment
-                getRatingQuery = "select avg(rating) from user_reviews_foodestab_item where estabid = ?"
-                getRatingParam = (estabid,)
+                getRatingQuery = "select avg(rating) from user_reviews_foodestab_item where estabid = ? and productid = ?"
+                getRatingParam = (estabid, productid)
                 avg_rating = fetch(getRatingQuery, getRatingParam)[0]
-                updateEstabRating(avg_rating, estabid)
+                updateFoodItemRating(avg_rating, estabid, productid)
             elif confirmation.lower() == "n":
                 return
             else:
