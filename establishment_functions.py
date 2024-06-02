@@ -2,17 +2,14 @@ import mariadb
 import sys
 from tabulate import tabulate
 
-from fooditems import *
-
-
 def print_menu_search():
-    print("\n[1] Search for a Food Establishment")
-    print("\n[2] Search for a Food Establishment Contact Number")
+    print("[1] Search for a Food Establishment")
+    print("[2] Search for a Food Establishment Contact Number")
     print("[0] Exit\n")
     
 
-    ChoiceForMenu = input("\nEnter choice: ")
-    return ChoiceForMenu
+    SearchChoice = input("\nEnter choice: ")
+    return SearchChoice
 
 def NewTransaction():
     print("#-------------------------------------------------------------#")
@@ -64,6 +61,13 @@ def check_estabid_in_contact_exists(cur, estabid):
     count = cur.fetchone()[0]
     return count > 0 # 0 if not existing & 1 if it exists
 
+# Checks if estabid is existing in food establishment table
+def check_estabid_exists_in_item(cur, estabid):
+    #checks if the given estabid exists in the contacts table
+    cur.execute("SELECT COUNT(*) FROM food_item WHERE estabid = ?", (estabid,))
+    count = cur.fetchone()[0]
+    return count > 0 # 0 if not existing & 1 if it exists
+
 #function that gets establishment_id
 def search_food_establishment_id(cur, estabname):
     cur.execute("SELECT estabid FROM food_estab WHERE estabname=?", (estabname,))
@@ -75,6 +79,16 @@ def search_food_establishment_id(cur, estabname):
     
     return result[0]
 
+#function that gets product_id
+def search_food_product_id(cur, estabid):
+    cur.execute("SELECT productid FROM food_item WHERE estabid=?", (estabid,))
+    result = cur.fetchone()
+    
+    if result is None:
+        print("Item not found.")
+        return
+    
+    return result[0]
 
 # Adds single food establishment
 def add_food_establishment(cur,conn):
@@ -175,10 +189,21 @@ def delete_food_establishment(cur, conn):
     # Deletes a detail in the table
     estabname_input = input("Enter Establishment Name <Establishment Name> - <General Location>: ")
     estabid = search_food_establishment_id(cur, estabname_input)
-    #productid = int(input("Enter Product ID: ")) # remove later on when combined with all
     if(check_estabid_exists(cur, estabid)== 0):
         return
     #print("Removing all food products and its food type related to this food establishment")  # remove product id prompt when combined
+    # Delete all related entries in food_type table
+    cur.execute("SELECT productid FROM food_item WHERE estabid=?", (estabid,))
+    product_ids = cur.fetchall()
+    
+    # Extract product IDs from tuples
+    product_ids = [product_id[0] for product_id in product_ids]
+    
+    for product_id in product_ids:
+        cur.execute("DELETE FROM food_type WHERE productid=?", (product_id,))
+    
+    # Delete all related entries in food_item table
+    cur.execute("DELETE FROM food_item WHERE estabid=?", (estabid,))
 
     if(check_estabid_in_contact_exists(cur, estabid) == 0):  # contact number does not exist
         # Rules to delete a food establishment
@@ -188,13 +213,11 @@ def delete_food_establishment(cur, conn):
         # After all that, you can now remove the establishment
         #cur.execute("DELETE FROM food_type WHERE productid=?", (productid,))  # needs to be deleted since estabid is a FK in this table
         #cur.execute("DELETE FROM food_item WHERE estabid=?", (estabid,))  # needs to be deleted since estabid is a FK in this table
-        deleteFoodItem(cur)
-        delete_food_establishment_contact(cur, conn)
         cur.execute("DELETE FROM food_estab WHERE estabid=?", (estabid,))
         conn.commit()
         print("Successfully Deleted\n")
     else:
-        print("Delete first the contact number that has the same establishment id\n")
+        print("Delete contact number, food item ,and food type related to this establishment\n")
     return
 
 
@@ -359,10 +382,10 @@ def print_details(cur, table_name):
 # Instantiate Connection
 try:
     conn = mariadb.connect(
-        host="localhost",
+        user="root",
+        password="123123",
+        host="127.0.0.1",
         port=3306,
-        user="127projdb",
-        password="group5",
         database="127projdb"
     )
 except mariadb.Error as e:

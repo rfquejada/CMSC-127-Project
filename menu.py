@@ -24,13 +24,13 @@ def sqlprint(rows, cur):
     if not rows:
         print("No results found.")
     else:
-        # Fetch column names from cursor description
+        # fetch column names from cursor description
         column_names = [desc[0] for desc in cur.description]
 
         # to print rows with null
         rows_with_null = [[cell if cell is not None else "NULL" for cell in row] for row in rows]
 
-        # Present data in table format
+        # present data in table format
         print(tabulate(rows_with_null, headers=column_names, tablefmt="coquette"))
 
 
@@ -54,20 +54,21 @@ def modifyfood():
 def modifyestab():
     while True:
         print("\nMODIFY ESTABLISHMENT")
-        print("\n[1] Insert an Establishment") #added
-        print("\n[2] Update an Establishment")
-        print("\n[3] Delete an Establishment")
+        print("[1] Insert an Establishment") #added
+        print("[2] Update an Establishment")
+        print("[3] Delete an Establishment")
         print("[4] Search an Establishment")
         print("[0] Back")
         estabchoice = int(input("\nEnter choice: "))
         if estabchoice == 1:
             #print("fxn here") to require at least one contact on the establishment
             add_food_establishment(cur,mydb)
+            print("Add Information for contact number")
             add_food_establishment_contact(cur,mydb)
         elif estabchoice == 2:
             while True:
-                print("\n[1] Update information of an Establishment")
-                print("\n[2] (Optional) Add an additional contact number for an Establishment")
+                print("[1] Update information of an Establishment")
+                print("[2] (Optional) Add an additional contact number for an Establishment")
                 print("[0] Back")
                 echoice = int(input("\nEnter choice: "))
                 if echoice == 1:
@@ -94,11 +95,11 @@ def modifyestab():
         elif estabchoice == 4:
             while True:
                 SearchChoice = print_menu_search()
-                if SearchChoice == 1:
-                    search_food_establishment(cur, conn)
-                elif SearchChoice == 2:
-                    search_food_establishment_contact(cur, conn)
-                elif SearchChoice == 0:
+                if SearchChoice == "1":
+                    search_food_establishment(cur, mydb)
+                elif SearchChoice == "2":
+                    search_food_establishment_contact(cur, mydb)
+                elif SearchChoice == "0":
                     break
                 else:
                     print("Invalid input.\n")
@@ -165,13 +166,13 @@ def search():
         if maxprice.lower() == "n/a":
             while True:
                 foodtype = input("\nFood type: ")
-                if foodtype.strip():
+                if foodtype.strip(): 
                     break
                 else:
                     print("\nInput required.")
-                cur.execute("select * from food_item i natural join food_type t where t.foodtype = ?", (foodtype,))
+                cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE t.foodtype = ?", (foodtype,))
                 rows = cur.fetchall()
-                sqlprint(rows, cur)
+                sqlprint(rows,cur)
         else:
             while True:
                 foodtype = input("\nFood type (N/A if not applicable): ")
@@ -180,11 +181,24 @@ def search():
                 else:
                     print("\nInput required.")
 
-    cur.execute(
-        "select * from food_item i natural join food_type t where ((i.price between ? and ?) and t.foodtype = ?) or t.foodtype = ? or (i.price between ? and ?)",
-        (minprice, maxprice, foodtype, foodtype, minprice, maxprice))
-    rows = cur.fetchall()
+    if minprice.lower() != "n/a" and maxprice.lower() != "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE ((i.price BETWEEN ? AND ?) AND t.foodtype = ?)", (minprice, maxprice, foodtype))
+    elif minprice.lower() != "n/a" and maxprice.lower() != "n/a" and foodtype.lower() == "n/a":
+        cur.execute("SELECT * FROM food_item i WHERE i.price BETWEEN ? AND ?", (minprice, maxprice))
+    elif minprice.lower() == "n/a" and maxprice.lower() != "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE (t.foodtype = ?)", (foodtype,))
+    elif minprice.lower() != "n/a" and maxprice.lower() == "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE (t.foodtype = ?)", (foodtype,))
+    elif minprice.lower() != "n/a" and maxprice.lower() == "n/a" and foodtype.lower() == "n/a":
+        cur.execute("SELECT * FROM food_item i WHERE i.price >= ?", (minprice,))
+    elif minprice.lower() == "n/a" and maxprice.lower() != "n/a" and foodtype.lower() == "n/a":
+        cur.execute("SELECT * FROM food_item i WHERE i.price <= ?", (maxprice,))
+    elif minprice.lower() == "n/a" and maxprice.lower() == "n/a" and foodtype.lower() != "n/a":
+        cur.execute("SELECT * FROM food_item i NATURAL JOIN food_type t WHERE (t.foodtype = ?)", (foodtype,))
+    else:
+        cur.execute("SELECT * FROM food_item")
 
+    rows = cur.fetchall()
     sqlprint(rows, cur)
 
 
@@ -218,13 +232,13 @@ def viewEstabs():
         choice = int(input("\nEnter choice: "))
 
         if choice == 1:
-            cur.execute("select * from food_estab")
+            cur.execute("select * from user_reviews_foodestab") #updated source table
             rows = cur.fetchall()
 
             sqlprint(rows, cur)
 
         elif choice == 2:
-            cur.execute("select * from food_estab where rating>=4")
+            cur.execute("select * from user_reviews_foodestab where rating>=4") #updated source table
             rows = cur.fetchall()
 
             sqlprint(rows, cur)
@@ -269,7 +283,7 @@ def viewFoodItems():
                 sqlprint(rows, cur)
                 break
 
-            elif 2:
+            elif userinput == 2:
                 cur.execute(
                     "select * from food_item where estabid in (select estabid from food_estab where estabname = ?) order by price asc",
                     (estabname,))
@@ -278,7 +292,7 @@ def viewFoodItems():
                 sqlprint(rows, cur)
                 break
 
-            elif 3:
+            elif userinput == 3:
                 cur.execute(
                     "select * from food_item where estabid in (select estabid from food_estab where estabname = ?) order by price desc",
                     (estabname,))
@@ -379,10 +393,8 @@ def adminmenu():
 
         if choice == 1:
             newFoodItemTransaction(cur)
-
         elif choice == 2:
             modifyestab()
-
         elif choice == 3:
             modifyreview()
         elif choice == 4:
@@ -484,14 +496,22 @@ def main():
             else:
                 print("\nUser does not exist. Sign up instead.")
         elif login == 2:
+            name = input("Name: ")
             username = input("Username: ")
+            contact_number = input("Contact number: ")
             password = input("Password: ")
             confirmpw = input("Confirm Password: ")
 
             if confirmpw == password:
-                print("add_user(username, password)")  # Add the new user to the database
+                cur.execute("insert into user (name, username, password) values (?, ?, ?)", (name, username, password))
+                mydb.commit()
+                cur.execute("select userid from user where username = ? and password = ?", (username, password))
+                row = cur.fetchone()
+                userid = row[0]
+                cur.execute("insert into user_contact (userid, contactnum) values (?, ?)", (userid, contact_number))
+                mydb.commit()
                 print("\nUser " + username + " has been signed up.")
-                customermenu()
+                customermenu(username, password)
             else:
                 print("\nPasswords do not match. Try again.")
         elif login == 0:
