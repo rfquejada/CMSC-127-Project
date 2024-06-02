@@ -283,7 +283,7 @@ def viewFoodItems():
                 sqlprint(rows, cur)
                 break
 
-            elif 2:
+            elif userinput == 2:
                 cur.execute(
                     "select * from food_item where estabid in (select estabid from food_estab where estabname = ?) order by price asc",
                     (estabname,))
@@ -292,7 +292,7 @@ def viewFoodItems():
                 sqlprint(rows, cur)
                 break
 
-            elif 3:
+            elif userinput == 3:
                 cur.execute(
                     "select * from food_item where estabid in (select estabid from food_estab where estabname = ?) order by price desc",
                     (estabname,))
