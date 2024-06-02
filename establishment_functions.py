@@ -94,15 +94,13 @@ def search_food_product_id(cur, estabid):
 def add_food_establishment(cur,conn):
     estabname = (input("Enter Establishment Name <Establishment Name> - <General Location>: "))
     branch_address = (input("Enter Branch Address: "))
-    rating = int(input("Enter Rating: "))
-    rating_array = [1,2,3,4,5]
-    if(len(estabname) > 50 or len(branch_address) > 50 or rating not in rating_array):
+    if(len(estabname) > 50 or len(branch_address) > 50):
         print("There has been a problem on one of the attribute inputted")
         return
     else:
         print("Food Establishment Details Added To The Food Establishment Table\n")
         #adds the given details about food establishment to the food establishment table
-        cur.execute("INSERT INTO food_estab(estabname, branch_address, rating) VALUES (?, ?, ?)",(estabname, branch_address, rating))
+        cur.execute("INSERT INTO food_estab(estabname, branch_address) VALUES (?, ?)",(estabname, branch_address))
         conn.commit()
         return
 
@@ -112,7 +110,7 @@ def add_food_establishment_contact(cur,conn):
     estabid = search_food_establishment_id(cur, estabname_input)
     if(check_estabid_exists(cur, estabid) == 0):
         return
-    contactnumIntForm = str(int(input("Enter Contact Number: ")))
+    contactnumIntForm = str(get_int_input("Enter Contact Number: "))
     if(len(contactnumIntForm) == 11):
         #adds the given details about food establishment contact number to the food establishment contact number table
         cur.execute("INSERT INTO estab_contact(estabid, contactnum) VALUES (?, ?)",(estabid, contactnumIntForm))
@@ -131,8 +129,6 @@ def update_food_establishment(cur,conn):
     else:
         estabname_input = input("Enter Establishment Name to update for (Leave empty if do not want to update): ")
         branch_address_input = input("Enter Branch Address to update for (Leave empty if do not want to update): ")
-        rating_input = input("Enter Rating to search for (Leave empty if do not want to update): ")
-        rating = int(rating_input) if rating_input else None
 
         if(len(estabname_input) <= 50):
             estabname = estabname_input if estabname_input else None
@@ -155,15 +151,6 @@ def update_food_establishment(cur,conn):
     if branch_address is not None:
         update_query += "branch_address=?, "
         update_values.append(branch_address)
-
-    if(rating is not None):
-        rating_array = [1,2,3,4,5]
-        if(rating not in rating_array):
-            print("Invalid Rating input.")
-            return
-        else:
-            update_query += "rating=?, "
-            update_values.append(rating)
             
     # Remove the trailing comma and space
     update_query = update_query[:-2]
@@ -243,7 +230,7 @@ def delete_food_establishment_contact_single(cur, conn):
    estabid = search_food_establishment_id(cur, estabname_input)
    if(check_estabid_exists(cur, estabid) == 0):
     return
-   contactnumIntForm = str(int(input("Enter Contact Number: ")))
+   contactnumIntForm = str(get_int_input("Enter Contact Number: "))
    if(check_estabid_exists(cur,estabid) == 1 and check_estabid_in_contact_exists(cur,estabid) == 1 and len(contactnumIntForm) == 11):
     cur.execute("DELETE FROM estab_contact WHERE estabid=? and contactnum=?",(estabid, contactnumIntForm))
     conn.commit()
@@ -260,10 +247,9 @@ def search_food_establishment(cur, conn):
     if(check_estabid_exists(cur, estabid) == 0):
         return
 
-    estabname_input = input("Enter Establishment Name to search for (Leave empty if not specified): ")
     branch_address_input = input("Enter Branch Address to search for (Leave empty if not specified): ")
     rating_input = input("Enter Rating to search for (Leave empty if not specified): ")
-    rating = int(rating_input) if rating_input else None
+    rating = float(rating_input) if rating_input else None
 
     if(len(estabname_input) <= 50):
         estabname = estabname_input if estabname_input else None
@@ -293,13 +279,8 @@ def search_food_establishment(cur, conn):
         search_values.append(branch_address)
 
     if(rating is not None):
-        rating_array = [1, 2, 3, 4, 5]
-        if rating not in rating_array:
-            print("Invalid Rating input.")
-            return
-        else:
-            conditions.append("rating=?")
-            search_values.append(rating)
+        conditions.append("rating=?")
+        search_values.append(rating)
 
     search_query += " AND ".join(conditions)
     
