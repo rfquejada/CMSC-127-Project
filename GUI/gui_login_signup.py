@@ -22,6 +22,7 @@ mydb = mariadb.connect(
 cur = mydb.cursor()
 
 def handle_login():
+    global logged_in_username, logged_in_password
     adminusername = "admin"
     adminpassword = "admin"
     username = username_entry.get()
@@ -31,15 +32,16 @@ def handle_login():
 
     if (username, password) == (adminusername, adminpassword):
         print(f"Welcome back, admin {username}!")
-        # adminmenu()  # Implement adminmenu function
+        # show_admin_screen()  # Implement adminmenu function
     elif any(username in row and password in row for row in rows):
         print(f"\nWelcome back, user {username}!")
-        # customermenu(username, password)  # Implement customermenu function
+        logged_in_username = username
+        logged_in_password = password
+        customermenu(username, password)  # Implement customermenu function
     elif any(username in row for row in rows):
         print(f"\nIncorrect password for user {username}. Try again.")
     else:
         print("\nUser does not exist. Sign up instead.")
-
 
 def show_login_screen():
     clear_window()
@@ -262,20 +264,21 @@ def customermenu(username, password):
         "#B89E97"
     ]
 
-    # button_commands = [
-    #     review_food_item,
-    #     review_establishment,
-    #     update_review,
-    #     delete_review,
-    #     search_food_item,
-    #     view
-    # ]
+    # Define commands for buttons
+    button_commands = [
+        select_estab_review_food_screen,
+        show_review_establishment_screen,
+        temp_command,
+        temp_command,
+        temp_command,
+        temp_command
+    ]
 
-    
-    for i, (option, color) in enumerate(zip(button_options, button_colors)): #missing button commands
+    # Create buttons and place them in a grid
+    for i, (option, color, command) in enumerate(zip(button_options, button_colors, button_commands)): #missing button commands
         row = i // 3 + 1
         col = i % 3
-        button = ctk.CTkButton(customer_menu_frame, text=option, width=250, height=250, fg_color=color,
+        button = ctk.CTkButton(customer_menu_frame, text=option, width=250, height=250, fg_color=color, command=command,
                                font=("Helvetica", 30), text_color="#000000")
         button.grid(row=row, column=col, padx=10, pady=50)
 
@@ -283,6 +286,368 @@ def customermenu(username, password):
     logout_button = ctk.CTkButton(customer_menu_frame, text="Logout", font=("Helvetica", 28), fg_color="#FF3E3E",
                                   command=show_login_screen)
     logout_button.grid(row=0, column=0, padx=0, pady=(50, 10))
+
+def handle_foodestab_review():
+    selected_establishment = establishment_label.cget("text").replace("Establishment: ", "")
+    rating = rating_combo.get()
+    review_body = review_body_entry.get("1.0", "end-1c")
+    print(selected_establishment)
+
+    if not selected_establishment or not rating or not review_body:
+        print("All fields must be filled out.")
+    else:
+        cur.execute("SELECT estabid FROM food_estab WHERE estabname = ?", (selected_establishment,))
+        estabid_row = cur.fetchone()
+        estabid = estabid_row[0]
+        if estabid:
+            userid = fetchUserId(logged_in_username, logged_in_password)  # Replace with actual user details
+            dateofreview = datetime.datetime.now()
+            query = "insert into user_reviews_foodestab (userid, estabid, rating, date_of_review, body) values (?, ?, ?, ?, ?)"
+            params = (userid, estabid, rating, dateofreview, review_body)
+            execute_query(query, params)
+            print(f"Review for {selected_establishment} submitted successfully.")
+
+            # Updates the average rating of the establishment
+            getRatingQuery = "select avg(rating) from user_reviews_foodestab where estabid = ?"
+            getRatingParam = (estabid,)
+            avg_rating = fetch(getRatingQuery, getRatingParam)[0]
+            updateEstabRating(avg_rating, estabid)
+
+            customermenu(logged_in_username, logged_in_password)
+        else:
+            print("Establishment not found.")
+
+def show_review_establishment_screen():
+    clear_window()
+
+    app.configure(bg="#F0F0F0")
+
+    app.grid_rowconfigure(0, weight=1)
+    app.grid_columnconfigure(0, weight=1)
+    app.grid_columnconfigure(1, weight=5)
+
+    panel_frame = ctk.CTkFrame(app, fg_color="#DECCCC")
+    panel_frame.grid(row=0, column=0, sticky="nsew")
+
+    options = [
+        ("Review a \nFood Item"),
+        ("Review an \nEstablishment"),
+        ("Update a \nReview"),
+        ("Delete a \nReview"),
+        ("Search \nFood Item"),
+        ("View")
+    ]
+
+    # Create buttons for each option and place them in the panel_frame
+    for i, (text) in enumerate(options):
+        button = ctk.CTkButton(panel_frame, text=text, font=("Helvetica", 12), width=100, height=100)
+        button.grid(row=i, column=0, padx=10, pady=10)
+
+    logout_button = ctk.CTkButton(panel_frame, text="Logout", font=("Helvetica", 18), fg_color="#FF3E3E",
+                                  command=show_login_screen)
+    logout_button.grid(row=len(options), column=0, padx=5, pady=(10, 10))
+
+    screen_frame = ctk.CTkFrame(app, fg_color="#F1F1F1")
+    screen_frame.grid(row=0, column=1, sticky="nsew")
+
+    screen_frame.grid_columnconfigure(0, weight=10)
+    screen_frame.grid_columnconfigure(1, weight=1)
+
+    screen_title = ctk.CTkLabel(screen_frame, text="Shop Review", font=("Helvetica", 60))
+    screen_title.grid(sticky="w", row=0, column=0, padx=15, pady=20)
+
+    establishments_frame = ctk.CTkFrame(screen_frame, fg_color="#FFFFFF", corner_radius=10)
+    establishments_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=0)
+
+    establishments_label = ctk.CTkLabel(establishments_frame, text="Establishments", font=("Helvetica", 25))
+    establishments_label.grid(row=0, column=0, pady=(20, 0), padx=15)
+
+    headers = ["Name", "Address", "Rating"]
+    for i, header in enumerate(headers):
+        header_label = ctk.CTkLabel(establishments_frame, text=header, font=("Helvetica", 20))
+        header_label.grid(row=1, column=i, pady=(20, 10))
+
+    cur.execute("select estabname, branch_address, rating from food_estab")
+    establishments = cur.fetchall()
+
+    for i, (name, address, rating) in enumerate(establishments):
+        # Display Name
+        establishment_name_label = ctk.CTkLabel(establishments_frame, text=name, font=("Helvetica", 20))
+        establishment_name_label.grid(row=i + 2, column=0, padx=20, pady=5, sticky="w")
+
+        # Display Address
+        establishment_address_label = ctk.CTkLabel(establishments_frame, text=address, font=("Helvetica", 20))
+        establishment_address_label.grid(row=i + 2, column=1, padx=20, pady=5, sticky="w")
+
+        # Display Rating
+        establishment_rating_label = ctk.CTkLabel(establishments_frame, text=str(rating), font=("Helvetica", 20))
+        establishment_rating_label.grid(row=i + 2, column=2, padx=20, pady=5, sticky="w")
+
+        # Select Button
+        select_button = ctk.CTkButton(establishments_frame, text="Select",
+                                      command=lambda establishment=name: select_establishment(establishment))
+        select_button.grid(row=i + 2, column=3, padx=20, pady=5)
+
+    review_frame = ctk.CTkFrame(screen_frame, fg_color="#F1F1F1", corner_radius=10)
+    review_frame.grid(row=1, column=1, sticky="nse", padx=20, pady=0)
+
+    global establishment_label
+    selected_estab_frame = ctk.CTkFrame(review_frame, fg_color="#FFFFFF", corner_radius=10)
+    selected_estab_frame.grid(row=0, column=0, sticky="nsew", pady=10)
+    establishment_label = ctk.CTkLabel(selected_estab_frame, text="Establishment: ", font=("Helvetica", 20))
+    establishment_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
+
+    input_frame = ctk.CTkFrame(review_frame, fg_color="#FFFFFF", corner_radius=10)
+    input_frame.grid(row=1, column=0)
+    review_label = ctk.CTkLabel(input_frame, text="Review", font=("Helvetica", 25))
+    review_label.grid(row=1, column=0, pady=20, padx=10, sticky="w")
+
+    rating_label = ctk.CTkLabel(input_frame, text="Rating:", font=("Helvetica", 20))
+    rating_label.grid(row=2, column=0, pady=10, padx=10, sticky="w")
+
+    global rating_combo
+    rating_combo = ctk.CTkComboBox(input_frame, values=[str(i) for i in range(1, 6)], font=("Helvetica", 15))
+    rating_combo.grid(row=2, column=0, pady=10, padx=10)
+
+    review_body_label = ctk.CTkLabel(input_frame, text="Review Body (max: 200 chars):", font=("Helvetica", 20))
+    review_body_label.grid(row=3, column=0, pady=10, padx=10, sticky="w")
+
+    global review_body_entry
+    review_body_entry = ctk.CTkTextbox(input_frame, width=400, height=200, font=("Helvetica", 20))
+    review_body_entry.grid(row=4, column=0, columnspan=2, pady=10, padx=10)
+
+    submit_button = ctk.CTkButton(input_frame, text="Submit", font=("Helvetica", 20), command=handle_foodestab_review)
+    submit_button.grid(row=5, column=0, columnspan=2, pady=20, padx=10)
+
+def select_establishment(name):
+    establishment_label.configure(text=f"Establishment: {name}")
+
+def select_estab_review_food_screen():
+    clear_window()
+
+    app.configure(bg="#F0F0F0")
+
+    app.grid_rowconfigure(0, weight=1)
+    app.grid_columnconfigure(0, weight=1)
+    app.grid_columnconfigure(1, weight=15)
+
+    panel_frame = ctk.CTkFrame(app, fg_color="#FFFFFF")
+    panel_frame.grid(row=0, column=0, sticky="nsew")
+
+    options = [
+        ("Review a \nFood Item"),
+        ("Review an \nEstablishment"),
+        ("Update a \nReview"),
+        ("Delete a \nReview"),
+        ("Search \nFood Item"),
+        ("View")
+    ]
+
+    # Create buttons for each option and place them in the panel_frame
+    for i, (text) in enumerate(options):
+        button = ctk.CTkButton(panel_frame, text=text, font=("Helvetica", 16), width=100, height=100,
+                               fg_color="#F0F0F0", text_color="#000000")
+        button.grid(row=i, column=0, padx=10, pady=10, sticky="nsew")
+
+    logout_button = ctk.CTkButton(panel_frame, text="Logout", font=("Helvetica", 18), fg_color="#FF3E3E",
+                                  command=show_login_screen)
+    logout_button.grid(row=len(options), column=0, padx=5, pady=(10, 10))
+
+    screen_frame = ctk.CTkFrame(app, fg_color="#F1F1F1")
+    screen_frame.grid(row=0, column=1, sticky="nsew")
+
+    screen_frame.grid_columnconfigure(0, weight=10)
+    screen_frame.grid_columnconfigure(1, weight=1)
+    screen_frame.grid_rowconfigure(0, weight=1)
+    screen_frame.grid_rowconfigure(1, weight=15)
+
+
+    screen_title = ctk.CTkLabel(screen_frame, text="Shop Review", font=("Helvetica", 60))
+    screen_title.grid(sticky="w", row=0, column=0, padx=15, pady=20)
+
+    establishments_frame = ctk.CTkFrame(screen_frame, fg_color="#FFFFFF", corner_radius=10)
+    establishments_frame.grid(row=1, column=0, sticky="nsw", padx=20, pady=0)
+
+    establishments_label = ctk.CTkLabel(establishments_frame, text="Establishments", font=("Helvetica", 25))
+    establishments_label.grid(row=0, column=0, pady=(20, 0), padx=15)
+
+    headers = ["Name", "Address", "Rating"]
+    for i, header in enumerate(headers):
+        header_label = ctk.CTkLabel(establishments_frame, text=header, font=("Helvetica", 25))
+        header_label.grid(row=1, column=i, pady=(20, 10))
+
+    cur.execute("select estabname, branch_address, rating from food_estab")
+    establishments = cur.fetchall()
+
+    for i, (name, address, rating) in enumerate(establishments):
+        # Display Name
+        establishment_name_label = ctk.CTkLabel(establishments_frame, text=name, font=("Helvetica", 25))
+        establishment_name_label.grid(row=i + 2, column=0, padx=20, pady=5, sticky="w")
+
+        # Display Address
+        establishment_address_label = ctk.CTkLabel(establishments_frame, text=address, font=("Helvetica", 25))
+        establishment_address_label.grid(row=i + 2, column=1, padx=20, pady=5, sticky="w")
+
+        # Display Rating
+        establishment_rating_label = ctk.CTkLabel(establishments_frame, text=str(rating), font=("Helvetica", 25))
+        establishment_rating_label.grid(row=i + 2, column=2, padx=20, pady=5, sticky="w")
+
+        # Select Button
+        select_button = ctk.CTkButton(establishments_frame, text="Select",
+                                      command=lambda establishment=name: show_review_food_screen(establishment))
+        select_button.grid(row=i + 2, column=3, padx=20, pady=5)
+
+def handle_fooditem_review():
+    selected_food = food_item_label.cget("text").replace("Food Item: ", "")
+    rating = rating_combo.get()
+    review_body = review_body_entry.get("1.0", "end-1c")
+
+    if not selected_food or not rating or not review_body:
+        print("All fields must be filled out.")
+    else:
+        cur.execute("SELECT productid FROM food_item WHERE itemname = ?", (selected_food,))
+        productid_row = cur.fetchone()
+        productid = productid_row[0]
+
+        cur.execute("select estabid from food_item where productid = ?", (productid,))
+        estabid_row = cur.fetchone()
+        estabid = estabid_row[0]
+        if productid:
+            userid = fetchUserId(logged_in_username, logged_in_password)  # Replace with actual user details
+            dateofreview = datetime.datetime.now()
+            query = "insert into user_reviews_foodestab_item (userid, estabid, productid, rating, date_of_review, body) values (?, ?, ?, ?, ?, ?)"
+            params = (userid, estabid, productid, rating, dateofreview, review_body)
+            execute_query(query, params)
+            print(f"Review for {selected_food} submitted successfully.")
+
+            # Updates the average rating of the establishment
+            getRatingQuery = "select avg(rating) from user_reviews_foodestab_item where estabid = ?"
+            getRatingParam = (estabid,)
+            avg_rating = fetch(getRatingQuery, getRatingParam)[0]
+            updateFoodItemRating(avg_rating, estabid, productid)
+
+            customermenu(logged_in_username, logged_in_password)
+        else:
+            print("Establishment not found.")
+def show_review_food_screen(establishment):
+    clear_window()
+
+    app.configure(bg="#F0F0F0")
+
+    app.grid_rowconfigure(0, weight=1)
+    app.grid_columnconfigure(0, weight=1)
+    app.grid_columnconfigure(1, weight=5)
+
+    panel_frame = ctk.CTkFrame(app, fg_color="#DECCCC")
+    panel_frame.grid(row=0, column=0, sticky="nsew")
+
+    options = [
+        ("Review a \nFood Item"),
+        ("Review an \nEstablishment"),
+        ("Update a \nReview"),
+        ("Delete a \nReview"),
+        ("Search \nFood Item"),
+        ("View")
+    ]
+
+    # Create buttons for each option and place them in the panel_frame
+    for i, (text) in enumerate(options):
+        button = ctk.CTkButton(panel_frame, text=text, font=("Helvetica", 12), width=100, height=100)
+        button.grid(row=i, column=0, padx=10, pady=10)
+
+    logout_button = ctk.CTkButton(panel_frame, text="Logout", font=("Helvetica", 18), fg_color="#FF3E3E",
+                                  command=show_login_screen)
+    logout_button.grid(row=len(options), column=0, padx=5, pady=(10, 10))
+
+    screen_frame = ctk.CTkFrame(app, fg_color="#F1F1F1")
+    screen_frame.grid(row=0, column=1, sticky="nsew")
+
+    screen_frame.grid_columnconfigure(0, weight=10)
+    screen_frame.grid_columnconfigure(1, weight=1)
+
+    screen_title = ctk.CTkLabel(screen_frame, text="Food Review", font=("Helvetica", 60))
+    screen_title.grid(sticky="w", row=0, column=0, padx=15, pady=20)
+
+    food_items_frame = ctk.CTkFrame(screen_frame, fg_color="#FFFFFF", corner_radius=10)
+    food_items_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=0)
+
+    food_items_label = ctk.CTkLabel(food_items_frame, text="Food Items", font=("Helvetica", 25))
+    food_items_label.grid(row=0, column=0, pady=(20, 0), padx=15)
+
+    headers = ["Name", "Price", "Rating"]
+    for i, header in enumerate(headers):
+        header_label = ctk.CTkLabel(food_items_frame, text=header, font=("Helvetica", 20))
+        header_label.grid(row=1, column=i, pady=(20, 10))
+
+    # Fetch food items from the database
+    cur.execute("select estabid from food_estab where estabname = ?", (establishment, ))
+    estabid = cur.fetchone()[0]
+    cur.execute("select itemname, price, rating from food_item where estabid = ? ", (estabid, ))
+    food_items = cur.fetchall()
+
+    for i, (name, price, rating) in enumerate(food_items):
+        # Display Name
+        food_name_label = ctk.CTkLabel(food_items_frame, text=name, font=("Helvetica", 20))
+        food_name_label.grid(row=i + 2, column=0, padx=20, pady=5, sticky="w")
+
+        # Display Price
+        food_price_label = ctk.CTkLabel(food_items_frame, text=price, font=("Helvetica", 20))
+        food_price_label.grid(row=i + 2, column=1, padx=20, pady=5, sticky="w")
+
+        # Display Rating
+        food_rating_label = ctk.CTkLabel(food_items_frame, text=rating, font=("Helvetica", 20))
+        food_rating_label.grid(row=i + 2, column=2, padx=20, pady=5, sticky="w")
+
+        # Select Button
+        select_button = ctk.CTkButton(food_items_frame, text="Select",
+                                      command=lambda food=name: select_food(food))
+        select_button.grid(row=i + 2, column=3, padx=20, pady=5)
+
+    review_frame = ctk.CTkFrame(screen_frame, fg_color="#F1F1F1", corner_radius=10)
+    review_frame.grid(row=1, column=1, sticky="nse", padx=20, pady=0)
+
+    global establishment_label
+    selected_estab_frame = ctk.CTkFrame(review_frame, fg_color="#FFFFFF", corner_radius=10)
+    selected_estab_frame.grid(row=0, column=0, sticky="nsew", pady=10)
+    establishment_label = ctk.CTkLabel(selected_estab_frame, text=f"Establishment: {establishment}",
+                                       font=("Helvetica", 20))
+    establishment_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
+
+    global food_item_label
+    food_item_label = ctk.CTkLabel(selected_estab_frame, text="Food Item: ",
+                                       font=("Helvetica", 20))
+    food_item_label.grid(row=1, column=0, pady=10, padx=10, sticky="w")
+
+    input_frame = ctk.CTkFrame(review_frame, fg_color="#FFFFFF", corner_radius=10)
+    input_frame.grid(row=1, column=0)
+    review_label = ctk.CTkLabel(input_frame, text="Review", font=("Helvetica", 25))
+    review_label.grid(row=1, column=0, pady=20, padx=10, sticky="w")
+
+    rating_label = ctk.CTkLabel(input_frame, text="Rating:", font=("Helvetica", 20))
+    rating_label.grid(row=2, column=0, pady=10, padx=10, sticky="w")
+
+    global rating_combo
+    rating_combo = ctk.CTkComboBox(input_frame, values=[str(i) for i in range(1, 6)], font=("Helvetica", 15))
+    rating_combo.grid(row=2, column=1, pady=10, padx=10)
+
+    review_body_label = ctk.CTkLabel(input_frame, text="Review Body (max: 200 chars):", font=("Helvetica", 20))
+    review_body_label.grid(row=3, column=0, pady=10, padx=10, sticky="w")
+
+    global review_body_entry
+    review_body_entry = ctk.CTkTextbox(input_frame, width=400, height=200, font=("Helvetica", 20))
+    review_body_entry.grid(row=4, column=0, columnspan=2, pady=10, padx=10)
+
+    submit_button = ctk.CTkButton(input_frame, text="Submit", font=("Helvetica", 20),
+                                  command=lambda: handle_fooditem_review())
+    submit_button.grid(row=5, column=0, columnspan=2, pady=20, padx=10)
+
+
+
+def select_food(name):
+    food_item_label.configure(text=f"Food Item: {name}")
+
+def temp_command():
+    print("TEMP COMMAND")
 
 def clear_window():
     for widget in app.winfo_children():
