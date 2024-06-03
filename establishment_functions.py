@@ -200,8 +200,6 @@ def delete_food_establishment(cur, conn):
     
     # Delete all related entries in food_item table
     cur.execute("DELETE FROM food_item WHERE estabid=?", (estabid,))
-
-    if(check_estabid_in_contact_exists(cur, estabid) == 0):  # contact number does not exist
         # Rules to delete a food establishment
         # Remove food_type because it uses productid as a FK
         # Remove food_item because it uses estabid as a FK
@@ -209,12 +207,12 @@ def delete_food_establishment(cur, conn):
         # After all that, you can now remove the establishment
         #cur.execute("DELETE FROM food_type WHERE productid=?", (productid,))  # needs to be deleted since estabid is a FK in this table
         #cur.execute("DELETE FROM food_item WHERE estabid=?", (estabid,))  # needs to be deleted since estabid is a FK in this table
-        cur.execute("DELETE FROM food_estab WHERE estabid=?", (estabid,))
-        conn.commit()
-        print("Successfully Deleted\n")
-    else:
-        print("Delete contact number, food item ,and food type related to this establishment\n")
-    return
+    cur.execute("DELETE FROM estab_contact WHERE estabid=?", (estabid,))
+    cur.execute("DELETE FROM user_reviews_foodestab WHERE estabid=?", (estabid,))
+    cur.execute("DELETE FROM user_reviews_foodestab_item WHERE estabid=?", (estabid,))
+    cur.execute("DELETE FROM food_estab WHERE estabid=?", (estabid,))
+    conn.commit()
+    print("Successfully Deleted\n")
 
 
 #delete all instance of food establishment contact number
