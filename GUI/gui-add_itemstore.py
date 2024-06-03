@@ -5,18 +5,18 @@ import sys
 
 # Initialize the main window
 app = ctk.CTk()
-app.geometry("600x600")
+app.geometry("1440x1024")
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
 def create_connection():
     try:
         conn = mariadb.connect(
-            user="root",
-            password="mustbeOkay12",
-            host="127.0.0.1",
+            password="04302004",
+            host="localhost",
             port=3306,
-            database="127projdb"
+            database="127projdb",
+            autocommit=True
         )
         return conn
     except mariadb.Error as e:
@@ -45,7 +45,13 @@ def check_estabid_exists_in_item(cur, estabid):
 
 #function that gets establishment_id
 def search_food_establishment_id(cur, estabname):
-    cur.execute("SELECT estabid FROM food_estab WHERE estabname=?", (estabname,))
+    estab = estabname.split()
+    namequery = ("select estabid from food_estab where estabname like '%")
+    for string in estab:
+        namequery += (string + '%')
+    namequery += "'"
+
+    cur.execute(namequery)
     result = cur.fetchone()
     
     if result is None:
@@ -126,6 +132,13 @@ def get_values_item():
     estabname = selling_food_estab.get()
     foodtype = food_type.get()
     foodtype1 = second_food_type.get()
+    conn = create_connection()
+    cur = conn.cursor()
+
+
+    estabid = search_food_establishment_id(cur, estabname)
+    if estabid is None:
+        return
     if(price.isdigit()==True): 
         print("item name: ", itemname)
         print("price: ", price)
@@ -133,14 +146,25 @@ def get_values_item():
         print("1 foodtype: ", foodtype)
         print("2 foodtype: ", foodtype1)
         #add mo na lang function dito di ko kasi saulo paano mo ginagawa yung inyo
+        cur.execute("INSERT INTO food_item(itemname, price, estabid) VALUES(?,?,?)", (itemname, price, estabid))
+        cur.execute("SELECT productid from food_item where itemname=? and estabid=?", (itemname, estabid))
+        itemid = cur.fetchone()[0]
+
+        cur.execute("INSERT INTO food_type(productid, foodtype) VALUES (?,?)", (itemid, foodtype))
+        
+        if foodtype1 != None or foodtype1 != "":
+            cur.execute("INSERT INTO food_type(productid, foodtype) VALUES (?,?)", (itemid, foodtype1))
+
+
         product_name.configure(state='disabled')
         price_var.configure(state='disabled')
         selling_food_estab.configure(state='disabled')
         food_type.configure(state='disabled')
         second_food_type.configure(state='disabled')
         messagebox.showinfo("Success", "Details saved successfully")
+        reset_form_fields_items()
     else:
-        messagebox.showerror("Input Error", "There has been a problem with price inputted")
+        messagebox.showerror("Input Error", "There has been a problem with price input")
 
 def reset_form_fields_items():
     global product_name
@@ -202,24 +226,24 @@ def add_itemstore_screen():
     
     estab_name_label = ctk.CTkLabel(add_estab, text="Establishment Name", fg_color='transparent', text_color='#000000', font=('Helvetica', 24))
     estab_name_label.grid(row = 1, column = 0)
-    estab_name = ctk.CTkEntry(add_estab,placeholder_text="<Establishment Name> - <General Location>" ,width=369, height=55, corner_radius=20, state='normal')
+    estab_name = ctk.CTkEntry(add_estab,placeholder_text="<Establishment Name> - <General Location>" ,width=400, height=55, corner_radius=20, state='normal')
     estab_name.grid(row=2, column=0, pady=15, padx=25, sticky='w')
 
     estab_name_address_label = ctk.CTkLabel(add_estab, text="Branch Address", fg_color='transparent', text_color='#000000', font=('Helvetica', 24))
     estab_name_address_label.grid(row = 3, column = 0)
-    estab_name_address = ctk.CTkEntry(add_estab,width=369, height=55, corner_radius=20, state='normal')
+    estab_name_address = ctk.CTkEntry(add_estab,width=400, height=55, corner_radius=20, state='normal')
     estab_name_address.grid(row=4, column=0, pady=15, padx=25, sticky='w')
 
     contact_number_label = ctk.CTkLabel(add_estab, text="Contact Number", fg_color='transparent', text_color='#000000', font=('Helvetica', 24))
     contact_number_label.grid(row = 5, column = 0)
-    contact_num = ctk.CTkEntry(add_estab, placeholder_text="00000000000", width=369, height=55, corner_radius=20, state='normal')
+    contact_num = ctk.CTkEntry(add_estab, placeholder_text="00000000000", width=400, height=55, corner_radius=20, state='normal')
     contact_num.grid(row=6, column=0, pady=15, padx=25, sticky='w')
 
-    submit_button = ctk.CTkButton(add_estab, text='submit', text_color='#FFFFFF', font=('Helvetica', 16), width=64, height=41, corner_radius=10, fg_color="#b89e97", command=lambda: get_values_estab())
-    submit_button.grid(row=11, column=0, pady=15, padx=5, sticky='n')
+    submit_button = ctk.CTkButton(add_estab, text='Submit', text_color='#FFFFFF', font=('Helvetica', 16), width=100, height=52, corner_radius=10, fg_color="#b89e97", command=lambda: get_values_estab())
+    submit_button.grid(row=11, column=0, pady=15, padx=24, sticky='w')
 
-    reset_button = ctk.CTkButton(add_estab, text='reset', text_color='#FFFFFF', font=('Helvetica', 16), width=64, height=41, corner_radius=10, fg_color="#FF3E3E", command=lambda: reset_form_fields())
-    reset_button.grid(row=11, column=0, pady=15, padx=5, sticky='e')
+    reset_button = ctk.CTkButton(add_estab, text='Reset', text_color='#FFFFFF', font=('Helvetica', 16), width=100, height=52, corner_radius=10, fg_color="#FF3E3E", command=lambda: reset_form_fields())
+    reset_button.grid(row=11, column=0, pady=15, padx=24, sticky='e')
 
     #Add Item Frame
     add_item = ctk.CTkFrame(main_content, width=473, height=682, corner_radius=20, border_width=1, fg_color="#FFFFFF")
@@ -259,11 +283,11 @@ def add_itemstore_screen():
     second_food_type = ctk.CTkEntry(add_item, width=369, height=45, corner_radius=20, state='normal')
     second_food_type.grid(row=10, column=0, pady=15, padx=25, sticky='w')
 
-    submit_button = ctk.CTkButton(add_item, text='submit', text_color='#FFFFFF', font=('Helvetica', 16), width=64, height=41, corner_radius=10, fg_color="#b89e97", command=lambda: get_values_item())
-    submit_button.grid(row=11, column=0, pady=15, padx=5, sticky='n')
+    submit_button = ctk.CTkButton(add_item, text='Submit', text_color='#FFFFFF', font=('Helvetica', 16), width=100, height=52, corner_radius=10, fg_color="#b89e97", command=lambda: get_values_item())
+    submit_button.grid(row=11, column=0, pady=15, padx=24, sticky='w')
 
-    reset_button = ctk.CTkButton(add_item, text='reset', text_color='#FFFFFF', font=('Helvetica', 16), width=64, height=41, corner_radius=10, fg_color="#FF3E3E", command=lambda: reset_form_fields())
-    reset_button.grid(row=11, column=0, pady=15, padx=5, sticky='e')
+    reset_button = ctk.CTkButton(add_item, text='Reset', text_color='#FFFFFF', font=('Helvetica', 16), width=100, height=52, corner_radius=10, fg_color="#FF3E3E", command=lambda: reset_form_fields_items())
+    reset_button.grid(row=11, column=0, pady=15, padx=24, sticky='e')
 
 
 
