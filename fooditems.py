@@ -20,7 +20,7 @@ def addFoodItem(cur):
     for string in estab:
         estabquery += (string + '%')
     estabquery += "'"
-    cur.execute(estabquery) 
+    cur.execute(estabquery)
     try:
         estabid = cur.fetchone()[0] #stores the estabid; if None, returns to menu and prints error msg
     except:
@@ -137,7 +137,7 @@ def searchFoodItem(cur, flag): #flag is for reusability of search: 1 is for id s
     namequery += ("AND estabid = (select estabid from food_estab where estabname like '%")
     for string in estab:
         namequery += (string + '%')
-    namequery += ("')")
+    namequery += ("' LIMIT 1)")
     cur.execute(namequery)
     
     #filters if the func was called to return all details of the product or the id only
