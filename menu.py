@@ -9,6 +9,7 @@ from fooditems import *
 
 # comment
 # Connecting to mariadb
+
 mydb = mariadb.connect(
     user="root",
     password="123123",
@@ -16,8 +17,18 @@ mydb = mariadb.connect(
     port=3306,
     database="127projdb"
 )
-
 cur = mydb.cursor()  # make the connection to execute SQL queries
+
+def reset_conn():
+    mydb = mariadb.connect(
+        user="root",
+        password="123123",
+        host="127.0.0.1",
+        port=3306,
+        database="127projdb"
+    )
+    cur = mydb.cursor()
+    return cur
 
 
 def sqlprint(rows, cur):
@@ -133,6 +144,7 @@ def modifyreview():
 
 
 def search():
+    curr = reset_conn()
     while True:
         minprice = input("\nMinimum price (N/A if not applicable): ")
         if minprice.lower() == "n/a" or (minprice.strip() and minprice.isdigit()):
@@ -171,8 +183,8 @@ def search():
                 else:
                     print("\nInput required.")
                 cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE t.foodtype = ?", (foodtype,))
-                rows = cur.fetchall()
-                sqlprint(rows,cur)
+                rows = curr.fetchall()
+                sqlprint(rows, curr)
         else:
             while True:
                 foodtype = input("\nFood type (N/A if not applicable): ")
@@ -182,24 +194,24 @@ def search():
                     print("\nInput required.")
 
     if minprice.lower() != "n/a" and maxprice.lower() != "n/a" and foodtype.lower() != "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE ((i.price BETWEEN ? AND ?) AND t.foodtype = ?)", (minprice, maxprice, foodtype))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE ((i.price BETWEEN ? AND ?) AND t.foodtype = ?)", (minprice, maxprice, foodtype))
     elif minprice.lower() != "n/a" and maxprice.lower() != "n/a" and foodtype.lower() == "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid WHERE i.price BETWEEN ? AND ?", (minprice, maxprice))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid WHERE i.price BETWEEN ? AND ?", (minprice, maxprice))
     elif minprice.lower() == "n/a" and maxprice.lower() != "n/a" and foodtype.lower() != "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE (t.foodtype = ?) and i.price <= ?", (foodtype, maxprice))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE (t.foodtype = ?) and i.price <= ?", (foodtype, maxprice))
     elif minprice.lower() != "n/a" and maxprice.lower() == "n/a" and foodtype.lower() != "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE (t.foodtype = ?) and i.price >= ?", (foodtype, minprice))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE (t.foodtype = ?) and i.price >= ?", (foodtype, minprice))
     elif minprice.lower() != "n/a" and maxprice.lower() == "n/a" and foodtype.lower() == "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid WHERE i.price >= ? order by e.estabid order by i.price", (minprice,))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid WHERE i.price >= ? order by e.estabid order by i.price", (minprice,))
     elif minprice.lower() == "n/a" and maxprice.lower() != "n/a" and foodtype.lower() == "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid WHERE i.price <= ? order by e.estabid order by i.price", (maxprice,))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid WHERE i.price <= ? order by e.estabid order by i.price", (maxprice,))
     elif minprice.lower() == "n/a" and maxprice.lower() == "n/a" and foodtype.lower() != "n/a":
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE t.foodtype = ? order by e.estabid", (foodtype,))
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating', t.foodtype as 'Type' FROM food_item i NATURAL JOIN food_type t JOIN food_estab e on e.estabid=i.estabid WHERE t.foodtype = ? order by e.estabid", (foodtype,))
     else:
-        cur.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid")
+        curr.execute("SELECT e.estabname as 'Establishment', i.itemname as 'Food', i.price as 'Price', i.rating as 'Rating' FROM food_item i JOIN food_estab e on e.estabid=i.estabid")
 
-    rows = cur.fetchall()
-    sqlprint(rows, cur)
+    rows = curr.fetchall()
+    sqlprint(rows, curr)
 
 
 def view():
@@ -224,6 +236,7 @@ def view():
 
 
 def viewEstabs():
+    curr = reset_conn()
     while True:
         print("-----VIEW ESTABLISHMENTS-----")
         print("\n[1] All reviews on all establishments")
@@ -235,37 +248,37 @@ def viewEstabs():
         choice = int(input("\nEnter choice: "))
 
         if choice == 1:
-            cur.execute("select u.username as 'User', e.estabname as 'Establishment', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab r join user u on r.userid=u.userid join food_estab e on r.estabid=e.estabid order by r.estabid")
-            rows = cur.fetchall()
+            curr.execute("select u.username as 'User', e.estabname as 'Establishment', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab r join user u on r.userid=u.userid join food_estab e on r.estabid=e.estabid order by r.estabid")
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
         elif choice == 2:
-            cur.execute("select u.username as 'User', e.estabname as 'Establishment', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab r join user u on r.userid=u.userid join food_estab e on r.estabid=e.estabid where r.rating>=4 order by r.estabid") #updated source table
-            rows = cur.fetchall()
+            curr.execute("select u.username as 'User', e.estabname as 'Establishment', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab r join user u on r.userid=u.userid join food_estab e on r.estabid=e.estabid where r.rating>=4 order by r.estabid") #updated source table
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
         elif choice == 3:
-            cur.execute("select estabname as 'Name', branch_address as 'Address', rating as 'Rating' from food_estab")
-            rows = cur.fetchall()
+            curr.execute("select estabname as 'Name', branch_address as 'Address', rating as 'Rating' from food_estab")
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
         elif choice == 4:
-            cur.execute("select estabname as 'Name', branch_address as 'Address', rating as 'Rating' from food_estab where rating >= 4")
-            rows = cur.fetchall()
+            curr.execute("select estabname as 'Name', branch_address as 'Address', rating as 'Rating' from food_estab where rating >= 4")
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
         elif choice == 5:
             estabname = input("Establishment name: ")
-            cur.execute(
+            curr.execute(
                 "select u.username as 'User', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab r natural join user u where r.estabid=(select estabid from food_estab where estabname = ?)",
                 (estabname, ))
-            rows = cur.fetchall()
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
             if (len(rows) <= 0):
                 print("Establishment not found.")
@@ -278,12 +291,12 @@ def viewEstabs():
             else:
                 month = input("\nEnter month in MM: ")
                 year = input("What year? (YYYY): ")
-                cur.execute(
+                curr.execute(
                     "select u.username as 'User', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab r natural join user u where r.estabid=(select estabid from food_estab where estabname = ?) and month(r.date_of_review) = ? and year(r.date_of_review) = ?",
                     (estabname, month, year))
-                rows = cur.fetchall()
+                rows = curr.fetchall()
 
-                sqlprint(rows, cur)
+                sqlprint(rows, curr)
 
         elif choice == 0:
             return
@@ -293,16 +306,17 @@ def viewEstabs():
 
 
 def viewFoodItems():
+    curr = reset_conn()
     while True:
         print("\n-----VIEW FOOD ITEMS-----")
 
         estabname = input("Establishment name: ")
 
-        cur.execute("select itemname as 'Item', price as 'Price (in Peso)', rating as 'Rating' from food_item where estabid in (select estabid from food_estab where estabname = ?)",
+        curr.execute("select itemname as 'Item', price as 'Price (in Peso)', rating as 'Rating' from food_item where estabid in (select estabid from food_estab where estabname = ?)",
                     (estabname,))
-        rows = cur.fetchall()
+        rows = curr.fetchall()
 
-        sqlprint(rows, cur)
+        sqlprint(rows, curr)
 
         if not rows:
             break
@@ -317,36 +331,37 @@ def viewFoodItems():
             if userinput == 1:
                 filter = input("Filter by food type: ")
 
-                cur.execute(
+                curr.execute(
                     "select itemname as 'Item', price as 'Price (in Peso)', rating as 'Rating' from food_item where productid in (select productid from food_type where foodtype = ?) and estabid in (select estabid from food_estab where estabname = ?)",
                     (filter, estabname))
-                rows = cur.fetchall()
+                rows = curr.fetchall()
 
-                sqlprint(rows, cur)
+                sqlprint(rows, curr)
                 break
 
             elif userinput == 2:
-                cur.execute(
+                curr.execute(
                     "select itemname as 'Item', price as 'Price (in Peso)', rating as 'Rating' from food_item where estabid in (select estabid from food_estab where estabname = ?) order by price asc",
                     (estabname,))
-                rows = cur.fetchall()
+                rows = curr.fetchall()
 
-                sqlprint(rows, cur)
+                sqlprint(rows, curr)
                 break
 
             elif userinput == 3:
-                cur.execute(
+                curr.execute(
                     "select itemname as 'Item', price as 'Price (in Peso)', rating as 'Rating' from food_item where estabid in (select estabid from food_estab where estabname = ?) order by price desc",
                     (estabname,))
-                rows = cur.fetchall()
+                rows = curr.fetchall()
 
-                sqlprint(rows, cur)
+                sqlprint(rows, curr)
                 break
             else:
                 return
 
 
 def viewFoodReviews():
+    curr = reset_conn()
     while True:
         print("\n-----VIEW FOOD REVIEWS-----")
         print("\n[1] Filter by establishment")
@@ -357,17 +372,17 @@ def viewFoodReviews():
         if userinput == 1:
             estabname = input("Establishment name: ")
 
-            cur.execute(
+            curr.execute(
                 "select u.username as 'User', f.itemname as 'Food', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab_item r join user u on r.userid=u.userid join food_item f on f.productid=r.productid where r.estabid=(select estabid from food_estab where estabname = ?)",
                 (estabname,))
-            rows = cur.fetchall()
+            rows = curr.fetchall()
 
             if(len(rows) <= 0):
                 print("Establishment not found.")
                 return
 
             # Fetch column names from cursor description
-            column_names = [desc[0] for desc in cur.description]
+            column_names = [desc[0] for desc in curr.description]
 
             # to print rows with null
             rows_with_null = [[cell if cell is not None else "NULL" for cell in row] for row in rows]
@@ -376,12 +391,12 @@ def viewFoodReviews():
             print(tabulate(rows_with_null, headers=column_names, tablefmt="coquette"))
 
             item = input("\nReviews for a food item: ")
-            cur.execute(
+            curr.execute(
                 "select u.username as 'User', f.itemname as 'Food', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab_item r join user u on r.userid=u.userid join food_item f on f.productid=r.productid where r.estabid=(select estabid from food_estab where estabname = ?) and r.productid=(select productid from food_item where itemname = ?)",
                 (estabname, item))
-            rows = cur.fetchall()
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
             bymonth = input("\nFilter by month (Y/N)? ")
 
@@ -390,13 +405,13 @@ def viewFoodReviews():
             else:
                 month = input("\nEnter month in MM: ")
                 year = input("What year? (YYYY): ")
-                cur.execute(
+                curr.execute(
                     "select u.username as 'User', f.itemname as 'Food', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab_item r join user u on r.userid=u.userid join food_item f on f.productid=r.productid where r.estabid=(select estabid from food_estab where estabname = ?) and month(r.date_of_review) = ? and year(r.date_of_review) = ? and r.productid=(select productid from food_item where itemname = ?)",
                     (estabname, month, year, item))
-                rows = cur.fetchall()
+                rows = curr.fetchall()
 
                 # Fetch column names from cursor description
-                column_names = [desc[0] for desc in cur.description]
+                column_names = [desc[0] for desc in curr.description]
 
                 # to print rows with null
                 rows_with_null = [[cell if cell is not None else "NULL" for cell in row] for row in rows]
@@ -408,12 +423,13 @@ def viewFoodReviews():
         elif userinput == 2:
             foodtype = input("Enter food type: ")
 
-            cur.execute(
-                "select * from reviewssummary where productid in (select productid from food_type where foodtype = ?)",
+            curr.execute(
+                # "select * from reviewssummary where productid in (select productid from food_type where foodtype = ?)",
+                "select u.username as 'User', e.estabname as 'Establishment', f.itemname as 'Food', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab_item r join user u on r.userid=u.userid join food_item f on f.productid=r.productid join food_type t on r.productid=t.productid join food_estab e on e.estabid=r.estabid where t.foodtype = ?",
                 (foodtype,))
-            rows = cur.fetchall()
+            rows = curr.fetchall()
 
-            sqlprint(rows, cur)
+            sqlprint(rows, curr)
 
             if not rows:
                 break
@@ -424,12 +440,13 @@ def viewFoodReviews():
                     return
                 else:
                     month = input("\nEnter month in MM: ")
-                    cur.execute(
-                        "select * from reviewssummary where productid in (select productid from food_type where foodtype = ?) and month(date_of_review)=?",
-                        (foodtype, month))
-                    rows = cur.fetchall()
+                    year = input("What year? (YYYY): ")
+                    curr.execute(
+                        "select u.username as 'User', e.estabname as 'Establishment', f.itemname as 'Food', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab_item r join user u on r.userid=u.userid join food_item f on f.productid=r.productid join food_type t on r.productid=t.productid join food_estab e on r.estabid=e.estabid where month(r.date_of_review) = ? and year(r.date_of_review) = ? and t.foodtype = ?",
+                        (month, year, foodtype))
+                    rows = curr.fetchall()
 
-                    sqlprint(rows, cur)
+                    sqlprint(rows, curr)
         elif userinput == 0:
             break
         else:
@@ -554,22 +571,25 @@ def main():
         elif login == 2:
             name = input("Name: ")
             username = input("Username: ")
-            contact_number = input("Contact number: ")
-            password = input("Password: ")
-            confirmpw = input("Confirm Password: ")
-
-            if confirmpw == password:
-                cur.execute("insert into user (name, username, password) values (?, ?, ?)", (name, username, password))
-                mydb.commit()
-                cur.execute("select userid from user where username = ? and password = ?", (username, password))
-                row = cur.fetchone()
-                userid = row[0]
-                cur.execute("insert into user_contact (userid, contactnum) values (?, ?)", (userid, contact_number))
-                mydb.commit()
-                print("\nUser " + username + " has been signed up.")
-                customermenu(username, password)
+            if username == "admin":
+                print("\nUsername reserved. Please try again.")
             else:
-                print("\nPasswords do not match. Try again.")
+                contact_number = input("Contact number: ")
+                password = input("Password: ")
+                confirmpw = input("Confirm Password: ")
+
+                if confirmpw == password:
+                    cur.execute("insert into user (name, username, password) values (?, ?, ?)", (name, username, password))
+                    mydb.commit()
+                    cur.execute("select userid from user where username = ? and password = ?", (username, password))
+                    row = cur.fetchone()
+                    userid = row[0]
+                    cur.execute("insert into user_contact (userid, contactnum) values (?, ?)", (userid, contact_number))
+                    mydb.commit()
+                    print("\nUser " + username + " has been signed up.")
+                    customermenu(username, password)
+                else:
+                    print("\nPasswords do not match. Try again.")
         elif login == 0:
             print("Goodbye!")
             return
