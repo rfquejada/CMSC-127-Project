@@ -2,10 +2,15 @@ Critique Food Establishment Information System
 
 
 Developers:
+
 Bañares, Naddine Rose
+
 Diares, Ken Vincent
+
 Francisco, Clyde
+
 Quejada, Roche
+
 CMSC 127 ST6L
 
 
