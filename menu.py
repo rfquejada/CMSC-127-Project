@@ -424,7 +424,6 @@ def viewFoodReviews():
             foodtype = input("Enter food type: ")
 
             curr.execute(
-                # "select * from reviewssummary where productid in (select productid from food_type where foodtype = ?)",
                 "select u.username as 'User', e.estabname as 'Establishment', f.itemname as 'Food', r.rating as 'Rating', r.date_of_review as 'Date', r.body as 'Review' from user_reviews_foodestab_item r join user u on r.userid=u.userid join food_item f on f.productid=r.productid join food_type t on r.productid=t.productid join food_estab e on e.estabid=r.estabid where t.foodtype = ?",
                 (foodtype,))
             rows = curr.fetchall()
@@ -540,11 +539,12 @@ def customermenu(username, password):
 
 
 def main():
+    curr = reset_conn()
     adminusername = "admin"
     adminpassword = "admin"
 
     while True:
-        print("\nWelcome to the Food Review System!")
+        print("\nWelcome to the Critique!")
         print("\n[1] Log in")
         print("[2] Sign up")
         print("[0] Exit")
@@ -555,17 +555,20 @@ def main():
             username = input("Username: ")
             password = input("Password: ")
 
-            cur.execute("select username, password from user")
-            rows = cur.fetchall()
+            curr.execute("select username, password from user")
+            rows = curr.fetchall()
+
+            user_dict = {row[0]: row[1] for row in rows}
 
             if (username, password) == (adminusername, adminpassword):
                 print("Welcome back, admin " + username + "!")
                 adminmenu()
-            elif any(username in row and password in row for row in rows):
-                print("\nWelcome back, user " + username + "!")
-                customermenu(username, password)
-            elif any(username in row for row in rows):
-                print("\nIncorrect password for user " + username + ". Try again.")
+            elif username in user_dict:
+                if user_dict[username] == password:
+                    print("\nWelcome back, user " + username + "!")
+                    customermenu(username, password)
+                else:
+                    print("\nIncorrect password for user " + username + ". Try again.")
             else:
                 print("\nUser does not exist. Sign up instead.")
         elif login == 2:
