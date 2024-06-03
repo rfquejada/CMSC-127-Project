@@ -335,13 +335,125 @@ def deleteEstabReview(username, password):
     else:
         print("No reviews found for the specified establishment.")
 
+def adminDeleteEstabReview():
+    print("*****DELETE FOOD ESTABLISHMENT REVIEW*****")
+
+    # Fetch estabid
+    estabid = fetchEstabId()
+    if estabid is None:
+        print("Establishment not found")
+        return
+
+    query = "select rating, date_of_review, body from user_reviews_foodestab where estabid = ?"
+    params = (estabid, )
+    reviews = fetchall(query, params)
+
+    if reviews:
+        review_data = [list(review) for review in reviews]
+
+        # Add headers
+        headers = ["Review Number", "Rating", "Date of Review", "Body"]
+
+        # Add review number
+        for i, _ in enumerate(review_data, start=1):
+            review_data[i - 1].insert(0, i)
+
+        print(tabulate(review_data, headers=headers, tablefmt="coquette"))
+
+        review_number = int(input("Enter the review number you want to delete: "))
+        if 1 <= review_number <= len(reviews):
+            review_to_delete = reviews[review_number - 1]
+            rating, date_of_review, body = review_to_delete
+
+            query = "delete from user_reviews_foodestab where estabid = ? and date_of_review = ?"
+            params = (estabid, date_of_review)
+
+            confirmation = input("\nAre you sure you want to delete it? (Y/N): ")
+            if confirmation.lower() == "y":
+                execute_query(query, params)
+
+                # Updates the average rating of the establishment
+                getRatingQuery = "select avg(rating) from user_reviews_foodestab where estabid = ?"
+                getRatingParam = (estabid,)
+                avg_rating = fetch(getRatingQuery, getRatingParam)[0]
+                updateEstabRating(avg_rating, estabid)
+            elif confirmation.lower() == "n":
+                return
+            else:
+                print("Invalid input.")
+
+        else:
+            print("Please enter a valid review number.")
+
+    else:
+        print("No reviews found for the specified establishment.")
+
+def adminDeleteFoodReview():
+    print("*****DELETE FOOD ITEM REVIEW*****")
+
+    # Fetch estab id
+    estabid = fetchEstabId()
+    if estabid is None:
+        print("Establishment not found.")
+        return
+
+    # Fetch productid
+    productid = fetchProductId(estabid)
+    if productid is None:
+        print("Product not found.")
+        return
+
+    query = "select rating, date_of_review, body from user_reviews_foodestab_item where estabid = ? and productid = ?"
+    params = (estabid, productid)
+    reviews = fetchall(query, params)
+
+    if reviews:
+        review_data = [list(review) for review in reviews]
+
+        # Add headers
+        headers = ["Review Number", "Rating", "Date of Review", "Body"]
+
+        # Add review number
+        for i, _ in enumerate(review_data, start=1):
+            review_data[i - 1].insert(0, i)
+
+        print(tabulate(review_data, headers=headers, tablefmt="coquette"))
+
+        review_number = int(input("Enter the review number you want to delete: "))
+        if 1 <= review_number <= len(reviews):
+            review_to_delete = reviews[review_number - 1]
+            rating, date_of_review, body = review_to_delete
+
+            query = "delete from user_reviews_foodestab_item where estabid = ? and date_of_review = ? and productid = ?"
+            params = (estabid, date_of_review, productid)
+
+            confirmation = input("\nAre you sure you want to delete it? (Y/N): ")
+            if confirmation.lower() == "y":
+                execute_query(query, params)
+
+                # Updates the average rating of the establishment
+                getRatingQuery = "select avg(rating) from user_reviews_foodestab_item where estabid = ? and productid = ?"
+                getRatingParam = (estabid, productid)
+                avg_rating = fetch(getRatingQuery, getRatingParam)[0]
+                updateFoodItemRating(avg_rating, estabid, productid)
+            elif confirmation.lower() == "n":
+                return
+            else:
+                print("Invalid input.")
+
+        else:
+            print("Please enter a valid review number.")
+
+    else:
+        print("No reviews found for the specified food item.")
+
 #Fetches the establishment id
 def fetchEstabId():
     estabnameinput = input("Enter establishment name: ")
     search_query = "select estabid from food_estab where estabname = ?"
     result = fetch(search_query, (estabnameinput,))
     if result is None:
-        return ("Establishment not found.")
+        return
     estabid = result[0]
     return estabid
 

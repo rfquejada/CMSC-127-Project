@@ -15,7 +15,8 @@ mydb = mariadb.connect(
     password="123123",
     host="127.0.0.1",
     port=3306,
-    database="127projdb"
+    database="127projdb",
+    autocommit=True
 )
 cur = mydb.cursor()  # make the connection to execute SQL queries
 
@@ -123,20 +124,14 @@ def modifyestab():
 def modifyreview():
     while True:
         print("\nMODIFY REVIEW")
-        print("\n[1] Update a FOOD Review")
+        print("\n[1] Delete an ESTABLISHMENT Review")
         print("[2] Delete a FOOD Review")
-        print("\n[3] Update an ESTABLISHMENT Review")
-        print("[4] Delete an ESTABLISHMENT Review")
-        print("\n[0] Back")
+        print("[0] Back")
         reviewchoice = int(input("\nEnter choice: "))
         if reviewchoice == 1:
-            print("\nFUNCTION HERE")
+            adminDeleteEstabReview()
         elif reviewchoice == 2:
-            print("\nFUNCTION HERE")
-        elif reviewchoice == 3:
-            print("\nFUNCTION HERE")
-        elif reviewchoice == 4:
-            print("\nFUNCTION HERE")
+            adminDeleteFoodReview()
         elif reviewchoice == 0:
             break
         else:
