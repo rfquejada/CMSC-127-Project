@@ -117,8 +117,10 @@ def deleteFoodItem(cur):
     if itemid == None:
         return
     
+    cur.execute("DELETE FROM user_reviews_foodestab_item where productid = ?", (itemid,))
     cur.execute("DELETE FROM food_type WHERE productid = ?", (itemid,)) #deletes all types
     cur.execute("DELETE FROM food_item WHERE productid = ?", (itemid,)) #deletes item
+
     return print("Item deleted!")
 
 #Search Food Item
