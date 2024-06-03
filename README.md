@@ -5,9 +5,9 @@ Developers:
 
 Bañares, Naddine Rose
 
-Diares, Ken Vincent
+Diares, Clyde
 
-Francisco, Clyde
+Francisco, Ken Vincent
 
 Quejada, Roche
 
