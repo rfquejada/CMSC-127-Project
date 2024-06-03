@@ -4,6 +4,12 @@ import sys
 from tabulate import tabulate
 ###### Functions for Food Items
 
+def check_productid_foodtype_exists(cur, productid, foodtype):
+    #checks if the given estabid exists in the contacts table
+    cur.execute("SELECT COUNT(*) FROM food_type WHERE productid = ? and foodtype = ?", (productid,foodtype))
+    count = cur.fetchone()[0]
+    return count > 0 
+
 #Add Food Item
 def addFoodItem(cur):
     name = input("Please input the name of the product: ")
@@ -30,8 +36,11 @@ def addFoodType(itemid, cur):
     addCheck = True #flag to keep the loop running until stopped by user
     while addCheck:
         foodtype = input("\nPlease input the type of the food: ")
-        cur.execute('INSERT INTO `food_type` (`productid`,`foodtype`) VALUES (?, ?)', (itemid, foodtype))
-        print("Food Type Added!")
+        if not check_productid_foodtype_exists(cur, itemid, foodtype):
+            cur.execute('INSERT INTO `food_type` (`productid`,`foodtype`) VALUES (?, ?)', (itemid, foodtype))
+            print("Food Type Added!")
+        else:
+            print("This product already has this food type")
 
         while True:
             cont = input("\nAdd more food types? 1 for YES, 0 for NO: ")

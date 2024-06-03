@@ -61,6 +61,12 @@ def check_estabid_in_contact_exists(cur, estabid):
     count = cur.fetchone()[0]
     return count > 0 # 0 if not existing & 1 if it exists
 
+def check_estabid_contactnum_in_contact_exists(cur, estabid, contactnum):
+    #checks if the given estabid exists in the contacts table
+    cur.execute("SELECT COUNT(*) FROM estab_contact WHERE estabid = ? and contactnum = ?", (estabid, contactnum,))
+    count = cur.fetchone()[0]
+    return count > 0 # 0 if not existing & 1 if it exists
+
 # Checks if estabid is existing in food establishment table
 def check_estabid_exists_in_item(cur, estabid):
     #checks if the given estabid exists in the contacts table
@@ -111,13 +117,16 @@ def add_food_establishment_contact(cur,conn):
     if(check_estabid_exists(cur, estabid) == 0):
         return
     contactnumIntForm = str(get_int_input("Enter Contact Number: "))
-    if(len(contactnumIntForm) == 11):
-        #adds the given details about food establishment contact number to the food establishment contact number table
-        cur.execute("INSERT INTO estab_contact(estabid, contactnum) VALUES (?, ?)",(estabid, contactnumIntForm))
-        print("A New Number For Establishment " + estabname_input +" Is Added\n")
-        conn.commit()
+    if not check_estabid_contactnum_in_contact_exists(cur, estabid, contactnumIntForm):
+        if(len(contactnumIntForm) == 11):
+            #adds the given details about food establishment contact number to the food establishment contact number table
+            cur.execute("INSERT INTO estab_contact(estabid, contactnum) VALUES (?, ?)",(estabid, contactnumIntForm))
+            print("A New Number For Establishment " + estabname_input +" Is Added\n")
+            conn.commit()
+        else:
+            print("There has been a problem on one of the attribute inputted\n")
     else:
-        print("There has been a problem on one of the attribute inputted\n")
+        print("This establishment already has this contact number")
     return
 
 def update_food_establishment(cur,conn):
